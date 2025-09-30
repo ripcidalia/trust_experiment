@@ -1,30 +1,630 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <title>Trust Experiment - Background Test</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <style>
-    html, body {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      background: black;
+  <head>
+    <meta charset="utf-8" />
+    <title>Trust Doors — Consent + Questionnaire</title>
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+
+    <!-- Local jsPsych files (adjust paths if your vendor folder differs) -->
+    <script src="jspsych/jspsych.js"></script>
+    <script src="jspsych/plugin-html-slider-response.js"></script>
+    <script src="jspsych/plugin-html-button-response.js"></script>
+    <script src="jspsych/plugin-html-keyboard-response.js"></script>
+    <script src="jspsych/plugin-image-keyboard-response.js"></script>
+    <script src="jspsych/plugin-call-function.js"></script>
+
+    <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+    <style>
+      :root { --bg: #f4f6fb; --card: #ffffff; --accent: #2b6fbf; --muted:#666; }
+      html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); }
+      .center-outer { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+      .card { background:var(--card); border-radius:10px; box-shadow:0 8px 30px rgba(10,10,20,0.08); padding:28px; width:100%; max-width:900px; }
+      h1 { margin:0 0 12px 0; font-size:22px; }
+      p { color:var(--muted); line-height:1.45; }
+      #consent-button { margin-top:18px; padding:12px 20px; background:var(--accent); color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
+      #jspsych-target { width:100%; height:100%; }
+      .two-line-label { text-align:center; font-size:14px; line-height:1.1; }
+    </style>
+  </head>
+
+  <body>  </body>
+
+  <!-- Consent UI (shown first) -->
+  <div id="consent-screen" class="center-outer">
+    <div class="card">
+      <h1>Participant Information & Consent</h1>
+      <p>
+        You are invited to take part in a study about human–robot trust. Participation is voluntary and anonymous.
+        Data will be recorded anonymously and used for research only. You may stop at any time by closing the browser window.
+      </p>
+      <p>
+        By pressing <strong>"I consent — Start experiment"</strong> you agree to participate, and you allow the experiment to go fullscreen for a distraction-free experience. Press <strong>Esc</strong> any time to exit fullscreen and stop the experiment.
+      </p>
+      <div style="text-align:center;">
+        <button id="consent-button">I consent — Start experiment</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- jsPsych target (hidden until consent) -->
+  <div id="jspsych-target" style="display:none;"></div>
+
+  <!-- Experiment code (runs only after user clicks consent) -->
+  <script>
+  // small helper: generate a random participant id
+  function randomId(len=8){
+    return Math.random().toString(36).slice(2, 2+len);
+  }
+
+  // robust consent -> fullscreen -> start handler
+  (function(){
+    const consentButton = document.getElementById('consent-button');
+
+    consentButton.addEventListener('click', async () => {
+      // small overlay while we prepare
+      const overlay = document.createElement('div');
+      overlay.style.position = 'fixed';
+      overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
+      overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
+      overlay.style.background = '#000'; overlay.style.color = '#fff'; overlay.style.zIndex = 99999;
+      overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:18px;margin-bottom:8px;">Preparing the experiment…</div><div style="font-size:12px;opacity:0.85">If this screen remains black, press ESC to exit fullscreen and open the browser console (F12).</div></div>';
+      document.body.appendChild(overlay);
+
+      // request fullscreen (user gesture)
+      const docEl = document.documentElement;
+      let fsSuccess = false;
+      function onFsChange(){ fsSuccess = !!(document.fullscreenElement || document.webkitFullscreenElement); document.removeEventListener('fullscreenchange', onFsChange); document.removeEventListener('webkitfullscreenchange', onFsChange); }
+      document.addEventListener('fullscreenchange', onFsChange);
+      document.addEventListener('webkitfullscreenchange', onFsChange);
+
+      try {
+        if (docEl.requestFullscreen) {
+          const p = docEl.requestFullscreen();
+          if (p && p.then) {
+            // wait briefly for promise or event
+            await Promise.race([p, new Promise(r => setTimeout(r, 500))]);
+          } else {
+            await new Promise(r => setTimeout(r, 300));
+          }
+        } else if (docEl.webkitRequestFullscreen) {
+          docEl.webkitRequestFullscreen();
+          await new Promise(r => setTimeout(r, 300));
+        }
+      } catch(e){
+        console.warn("Fullscreen request threw:", e);
+      }
+
+      // Wait a little for fullscreenchange event
+      const deadline = Date.now() + 1000;
+      while (Date.now() < deadline && !fsSuccess) { await new Promise(r => setTimeout(r, 50)); }
+
+      // hide consent and reveal jsPsych target
+      document.getElementById('consent-screen').style.display = 'none';
+      const jsTarget = document.getElementById('jspsych-target');
+      jsTarget.style.display = 'block';
+      // ensure target fills the screen
+      jsTarget.style.position = 'fixed'; jsTarget.style.left='0'; jsTarget.style.top='0'; jsTarget.style.width='100%'; jsTarget.style.height='100%';
+      jsTarget.style.zIndex = 10; jsTarget.style.background = '#f4f6fb';
+
+      // small delay to allow layout
+      await new Promise(r => setTimeout(r, 60));
+
+      try {
+        startJsPsych(); // start the experiment timeline
+      } catch(err){
+        console.error("startJsPsych() threw:", err);
+        overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:18px;color:#f88;margin-bottom:8px;">An error occurred while starting the experiment</div><div style="font-size:13px;color:#fff;opacity:0.9">Open the browser console (F12) to see details.</div></div>';
+        return;
+      }
+
+      // remove overlay after short delay
+      setTimeout(()=>{ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
+    }); // consent click
+  })();
+
+  // experiment builder (called after consent)
+  function startJsPsych(){
+    if (typeof initJsPsych !== 'function'){
+      throw new Error("initJsPsych not found. Ensure jsPsych core script was loaded before this code.");
     }
-    body {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+
+    // initialize jsPsych once
+    var jsPsych = initJsPsych({
+      display_element: document.getElementById('jspsych-target'),
+      on_finish: function(){
+        // provide CSV download at the end
+        const csv = jsPsych.data.get().csv();
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `trust_experiment_${pid}.csv`;
+        a.textContent = "Download results";
+        a.style.display = 'inline-block';
+        a.style.margin = '20px';
+        document.body.appendChild(a);
+      }
+    });
+    const timeline = [];
+    // participant id
+    const pid = randomId(8);
+    jsPsych.data.addProperties({participant_id: pid});
+
+    // Slider trial: 0 (never) to 100 (always). Two-line labels.
+    const slider_trial = {
+      type: jsPsychHtmlSliderResponse,
+      stimulus: '<h2>How much do you generally trust robots?</h2>',
+      labels: [
+        '<div class="two-line-label">0<br>(never)</div>',
+        '<div class="two-line-label">100<br>(always)</div>'
+      ],
+      min: 0,
+      max: 100,
+      start: 50,
+      slider_width: 700,
+      require_movement: true,
+      button_label: 'Next',
+      on_load: function() {
+        var display_element = jsPsych.getDisplayElement();
+        // Make the container a flexbox
+        display_element.style.display = 'flex';
+        display_element.style.flexDirection = 'column';
+        display_element.style.justifyContent = 'center'; // vertical centering
+        display_element.style.alignItems = 'center';     // horizontal centering
+        display_element.style.height = '100vh';          // full viewport height
+
+        // Select the slider input
+        var slider = display_element.querySelector('input[type="range"]');
+
+        // Create a container for the current value
+        var valueDisplay = document.createElement('div');
+        valueDisplay.id = 'slider-value-display';
+        valueDisplay.style.textAlign = 'center';
+        valueDisplay.style.marginBottom = '5px';
+        valueDisplay.textContent = 'Selected value: ' + slider.value;
+
+        // Insert the value display above the slider
+        slider.parentNode.insertBefore(valueDisplay, slider);
+
+        // Update the display whenever the slider moves
+        slider.addEventListener('input', function() {
+          valueDisplay.textContent = 'Selected value: ' + slider.value;
+        });
+      }
+    };
+
+    timeline.push(slider_trial);
+
+    // Emergency choice trial: two large buttons
+    const emergency_trial = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: '<h2>In an emergency situation, whose judgement do you generally trust more?</h2>',
+      choices: ['My own judgement', 'A robot\'s judgement'],
+      button_html: function(choice, choice_index) {return '<button class="jspsych-btn" style="padding:12px 20px; font-size:16px;">' + choice + '</button>'},
+      margin_vertical: '50px',
+      response_ends_trial: true,
+      on_load: function() {
+        // allow Enter to press the first button if user hits Enter
+        function onKey(e){
+          if (e.key === "Enter"){
+            const btns = document.querySelectorAll('.jspsych-btn');
+            if (btns && btns.length){
+              btns[0].click();
+            }
+          }
+        }
+        document.addEventListener('keydown', onKey);
+        // remove on finish
+        jsPsych.pluginAPI.setTimeout(() => {}, 0);
+        // Ensure removal after trial ends
+        document.addEventListener('jspsych-trial-finish', function cleanup(){
+          document.removeEventListener('keydown', onKey);
+          document.removeEventListener('jspsych-trial-finish', cleanup);
+        });
+      }
+    };
+
+    timeline.push(emergency_trial);
+
+    const ready_trial = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: '<h2>You are ready to proceed.</h2><p>Press Continue to start the main task.</p>',
+      choices: ['Continue'],
+      button_html: function(choice, choice_index) {return '<button class="jspsych-btn" style="padding:12px 20px; font-size:16px;">' + choice + '</button>'},
+    };
+
+    timeline.push(ready_trial);
+
+
+    /* ---------------------------
+      Preload images from assets/
+    ----------------------------*/
+    jsPsych.pluginAPI.preloadImages([
+      'assets/background.png',
+      'assets/drone.png',
+      'assets/door.png',
+      'assets/victim.png',
+      'assets/empty.png',
+      'assets/left_arrow.png',
+      'assets/right_arrow.png'
+    ]);
+
+    /* ---------------------------
+      Debug CSS (optional)
+    ----------------------------*/
+    const debugStyles = `
+      .overlay { outline: 1px dashed lime; }
+      .overlay-arrow { outline: 1px solid magenta; }
+      .overlay-drone { outline: 1px solid cyan; }
+    `;
+    const debugSheet = document.createElement('style');
+    debugSheet.textContent = debugStyles;
+    document.head.appendChild(debugSheet);
+
+
+    /* ---------------------------
+      Layout: only top-left X/Y (in original background pixels)
+      Replace these example coords with your measured values.
+    ----------------------------*/
+    const layout = {
+      bgFit: 'width', // 'width' fits background to viewport width (keeps aspect); could change to 'height' later
+      // top-left coords of doors on the original (authoring) background PNG (in px)
+      leftDoorX: 479,
+      leftDoorY: 248,
+      rightDoorX: 1132,
+      rightDoorY: 248,
+
+      // optional offsets (in original background pixels) for arrow and drone placement
+      arrowOffsetY: -80,     // how far above the door top the arrow should be placed (negative = up)
+      droneOffsetY: -180     // vertical offset (from door top) to place drone above doors
+    };
+
+    /* ---------------------------
+      Build scene HTML (overlays carry original coords as data attributes)
+    ----------------------------*/
+    function build_scene_html({ suggestion = 'none', reveal = false, choice = null, true_location = null }) {
+      const leftDoorImg = (reveal && choice === 'left')
+                          ? (true_location === 'left' ? 'assets/victim.png' : 'assets/empty.png')
+                          : 'assets/door.png';
+      const rightDoorImg = (reveal && choice === 'right')
+                          ? (true_location === 'right' ? 'assets/victim.png' : 'assets/empty.png')
+                          : 'assets/door.png';
+
+      const leftArrowHtml  = suggestion === 'left' ? `<img src="assets/left_arrow.png" class="overlay-arrow" data-side="left">` : '';
+      const rightArrowHtml = suggestion === 'right' ? `<img src="assets/right_arrow.png" class="overlay-arrow" data-side="right">` : '';
+      const droneHtml      = `<img src="assets/drone.png" class="overlay-drone">`;
+
+      return `
+        <div class="scene-root">
+          <div class="scene-frame">
+            <img src="assets/background.png" class="background">
+
+            <!-- overlay containers: placed by JS using data attributes -->
+            <div class="overlay left-door"
+                data-orig-x="${layout.leftDoorX}"
+                data-orig-y="${layout.leftDoorY}">
+              ${leftArrowHtml}
+              <img src="${leftDoorImg}" class="door-image">
+            </div>
+
+            <div class="overlay right-door"
+                data-orig-x="${layout.rightDoorX}"
+                data-orig-y="${layout.rightDoorY}">
+              ${rightArrowHtml}
+              <img src="${rightDoorImg}" class="door-image">
+            </div>
+
+            ${droneHtml}
+          </div>
+        </div>
+
+        <style>
+          /* container */
+          .scene-root{
+            display:flex; justify-content:center; align-items:center;
+            width:100vw; height:100vh; margin:0; padding:0; background:#000; overflow:hidden;
+          }
+          /* frame holds the background image; background scaled to viewport width (keeps aspect) */
+          .scene-frame { position:relative; width:100vw; max-width:100vw; line-height:0; }
+          .background { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; }
+
+          /* overlay containers are absolutely positioned within frame (JS sets left/top/width/height) */
+          .overlay { position:absolute; z-index:2; pointer-events:none; }
+          .door-image { width:100%; height:100%; display:block; object-fit:contain; user-select:none; -webkit-user-drag:none; }
+
+          .overlay-arrow { position:absolute; z-index:3; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; }
+          .overlay-drone { position:absolute; z-index:4; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; transform: translateX(-50%); left:50%; }
+        </style>
+      `;
     }
-    #bg {
-      object-fit: cover;   /* scale to cover screen */
-      width: 100%;
-      height: 100%;
+
+    /* ===========================
+      CSS tweaks (replace existing .scene-root/.scene-frame/.background/.overlay-* CSS)
+      - make overflow visible so arrows/drone above doors aren't clipped
+      - explicit z-index ordering
+      =========================== */
+    const addedStyles = `
+      .scene-root { overflow: visible; }
+      .scene-frame { overflow: visible; }
+      .background { z-index: 0; }
+      .overlay { z-index: 2; }
+      .overlay-arrow { z-index: 3; }
+      .overlay-drone { z-index: 4; }
+    `;
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = addedStyles;
+    document.head.appendChild(styleSheet);
+
+    /* ===========================
+      Utility: decode an <img> element, returns a Promise that resolves when decoded
+      Works in all modern browsers; falls back to onload if decode() is not supported.
+      =========================== */
+    function decodeImage(img) {
+      if (!img) return Promise.resolve();
+      if ('decode' in img) {
+        // decode() returns a Promise that resolves when image data is ready
+        return img.decode().catch(() => Promise.resolve()); // ignore decode errors
+      } else {
+        // fallback
+        return new Promise(resolve => {
+          if (img.complete && img.naturalWidth) return resolve();
+          img.onload = () => resolve();
+          img.onerror = () => resolve();
+        });
+      }
     }
-  </style>
-</head>
-<body>
-  <img id="bg" src="assets/background.png" alt="Background" />
-</body>
+
+    /* ===========================
+      Improved positioning function
+      - waits for background + door + arrow + drone images to decode
+      - computes uniform scale from background.naturalWidth -> displayed width
+      - sets overlay size from door natural size scaled
+      - places overlay top-left at (origX*scale, origY*scale)
+      - places arrow so its BOTTOM sits arrowOffsetY (orig px scaled) above door top:
+          arrowTopInsideOverlay = (arrowOffsetY * scale) - arrowDispH
+      - places drone centered between door centers and offset vertically by droneOffsetY*scale
+      =========================== */
+    async function position_scene_overlays(display_element) {
+      const frame = display_element.querySelector('.scene-frame');
+      const bg = frame.querySelector('.background');
+      if (!frame || !bg) return;
+
+      // gather all overlay images
+      const leftDoorImg = frame.querySelector('.left-door .door-image');
+      const rightDoorImg = frame.querySelector('.right-door .door-image');
+      const leftArrowImg = frame.querySelector('.left-door .overlay-arrow');
+      const rightArrowImg = frame.querySelector('.right-door .overlay-arrow');
+      const droneImg = frame.querySelector('.overlay-drone');
+
+      // decode images (only decode arrow if it exists)
+      await Promise.all([
+        decodeImage(bg),
+        decodeImage(leftDoorImg),
+        decodeImage(rightDoorImg),
+        leftArrowImg ? decodeImage(leftArrowImg) : Promise.resolve(),
+        rightArrowImg ? decodeImage(rightArrowImg) : Promise.resolve(),
+        decodeImage(droneImg)
+      ]);
+
+
+      // compute scale based on background width
+      const origBgW = bg.naturalWidth || bg.width;
+      const origBgH = bg.naturalHeight || bg.height;
+      const frameWidth = frame.clientWidth;
+      const scale = frameWidth / origBgW;
+      const frameHeight = origBgH * scale; // <- define frameHeight here
+      bg.style.width = frameWidth + 'px';
+      bg.style.height = frameHeight + 'px';
+
+      // helper to get natural sizes
+      const nat = el => (el && (el.naturalWidth || el.width)) ? { w: (el.naturalWidth || el.width), h: (el.naturalHeight || el.height) } : null;
+
+      // position door overlays
+      const overlays = frame.querySelectorAll('.overlay');
+      overlays.forEach(el => {
+        const origX = parseFloat(el.getAttribute('data-orig-x')) || 0;
+        const origY = parseFloat(el.getAttribute('data-orig-y')) || 0;
+
+        const doorImg = el.querySelector('.door-image');
+        const doorNat = nat(doorImg);
+        const doorNatW = doorNat ? doorNat.w : 360;
+        const doorNatH = doorNat ? doorNat.h : Math.round(doorNatW * 1.3);
+
+        const dispW = Math.round(doorNatW * scale);
+        const dispH = Math.round(doorNatH * scale);
+        const dispLeft = Math.round(origX * scale);
+        const dispTop = Math.round(origY * scale);
+
+        el.style.position = 'absolute';
+        el.style.left = dispLeft + 'px';
+        el.style.top = dispTop + 'px';
+        el.style.width = dispW + 'px';
+        el.style.height = dispH + 'px';
+
+        // arrow overlay
+        const arrow = el.querySelector('.overlay-arrow');
+        if (arrow) {
+          const arrowNat = nat(arrow);
+          const arrowNatW = arrowNat ? arrowNat.w : Math.round(doorNatW * 0.45);
+          const arrowNatH = arrowNat ? arrowNat.h : Math.round(arrowNatW * 0.6);
+
+          const arrowDispW = Math.round(arrowNatW * scale);
+          const arrowDispH = Math.round(arrowNatH * scale);
+
+          arrow.style.width = arrowDispW + 'px';
+          arrow.style.height = arrowDispH + 'px';
+
+          const arrowLeftInsideOverlay = Math.round((dispW - arrowDispW) / 2);
+          const arrowDistanceAbove = Math.abs(layout.arrowOffsetY || 80); // px above door top
+          const arrowTopInsideOverlay = -arrowDistanceAbove * scale - arrowDispH;
+
+          arrow.style.left = arrowLeftInsideOverlay + 'px';
+          arrow.style.top = arrowTopInsideOverlay + 'px';
+          arrow.style.display = 'block';
+        }
+      });
+
+      // drone: horizontally center between doors, vertically center in background
+      const leftEl = frame.querySelector('.left-door');
+      const rightEl = frame.querySelector('.right-door');
+      const drone = frame.querySelector('.overlay-drone');
+
+      if (drone && leftEl && rightEl) {
+        const leftW = parseFloat(leftEl.style.width) || 0;
+        const leftL = parseFloat(leftEl.style.left) || 0;
+        const rightW = parseFloat(rightEl.style.width) || 0;
+        const rightL = parseFloat(rightEl.style.left) || 0;
+
+        const leftCenter = leftL + leftW / 2;
+        const rightCenter = rightL + rightW / 2;
+        const centerX = Math.round((leftCenter + rightCenter) / 2);
+
+        // drone size
+        const droneNat = nat(drone);
+        const droneDispW = Math.round((droneNat ? droneNat.w : 160) * scale);
+        const droneDispH = Math.round((droneNat ? droneNat.h : 100) * scale);
+
+        const droneTop = Math.round((frameHeight - droneDispH) / 2); // vertical center
+
+        drone.style.width = droneDispW + 'px';
+        drone.style.height = droneDispH + 'px';
+        drone.style.left = centerX + 'px';
+        drone.style.top = droneTop + 'px';
+        drone.style.transform = 'translateX(-50%)';
+        drone.style.display = 'block';
+      }
+
+      // store scale for reference
+      frame.dataset.scale = scale;
+
+      // -- Debugging log: inspect existence and natural sizes
+      console.group('overlay-debug');
+      console.log('leftArrow element?', !!leftArrowImg, leftArrowImg);
+      console.log('rightArrow element?', !!rightArrowImg, rightArrowImg);
+      console.log('drone element?', !!droneImg, droneImg);
+
+      if (leftArrowImg) console.log('leftArrow natural size', leftArrowImg.naturalWidth, leftArrowImg.naturalHeight);
+      if (rightArrowImg) console.log('rightArrow natural size', rightArrowImg.naturalWidth, rightArrowImg.naturalHeight);
+      if (droneImg) console.log('drone natural size', droneImg.naturalWidth, droneImg.naturalHeight);
+
+      console.log('scale', scale, 'frameWidth', frameWidth, 'bg.naturalWidth', origBgW);
+
+      const leftOverlay = frame.querySelector('.left-door');
+      const rightOverlay = frame.querySelector('.right-door');
+      if (leftOverlay) console.log('left overlay (left,top,w,h):', leftOverlay.style.left, leftOverlay.style.top, leftOverlay.style.width, leftOverlay.style.height);
+      if (rightOverlay) console.log('right overlay (left,top,w,h):', rightOverlay.style.left, rightOverlay.style.top, rightOverlay.style.width, rightOverlay.style.height);
+      console.groupEnd();
+    }
+
+    /* ===========================
+      New attach_positioning that uses the improved function and ensures a single resize listener
+      per frame (removes it in cleanup)
+      =========================== */
+    function attach_positioning(display_element) {
+      // call the async positioning (no need to await here)
+      position_scene_overlays(display_element);
+
+      // install a resize handler that debounces and calls the positioning logic
+      let to = null;
+      const resizeHandler = () => {
+        if (to) clearTimeout(to);
+        to = setTimeout(() => position_scene_overlays(display_element), 80);
+      };
+      window.addEventListener('resize', resizeHandler);
+
+      return () => window.removeEventListener('resize', resizeHandler);
+    }
+
+    /* ---------------------------
+      Trials: suggestion -> choice -> reveal
+    ----------------------------*/
+    let trials = [
+      { true_location: 'left', suggestion: 'left' },
+      { true_location: 'right', suggestion: 'right' },
+      { true_location: 'left', suggestion: 'right' },
+      { true_location: 'right', suggestion: 'left' }
+    ];
+    trials = jsPsych.randomization.shuffle(trials);
+    const trial_vars = trials.map(t => ({ tvars: t }));
+
+
+    /* a helper that sets up overlay positioning and a one-time resize listener that is removed in on_finish */
+    function attach_positioning(display_element) {
+      // ensure images decoded; if background not loaded, wait for load
+      const bg = display_element.querySelector('.background');
+      const apply = () => position_scene_overlays(display_element);
+      if (bg && !bg.complete) {
+        bg.onload = apply;
+      } else {
+        apply();
+      }
+      // add resize listener and return a cleanup function
+      const resizeHandler = () => position_scene_overlays(display_element);
+      window.addEventListener('resize', resizeHandler);
+      return () => window.removeEventListener('resize', resizeHandler);
+    }
+
+    // This replaces your previous suggestion_display, choice_trial, and reveal_trial
+    const combined_trial = {
+      type: jsPsychHtmlKeyboardResponse,
+      stimulus: function() {
+        const t = jsPsych.timelineVariable('tvars'); // your trial variables (suggestion, true_location)
+        // show drone and suggested arrow, doors closed
+        return build_scene_html({ suggestion: t.suggestion, reveal: false });
+      },
+      choices: ['ArrowLeft','ArrowRight'],
+      response_ends_trial: true,
+      trial_duration: 5000, // max time for participant to respond
+      data: function() {
+        const t = jsPsych.timelineVariable('tvars');
+        return {
+          suggestion: t.suggestion,
+          true_location: t.true_location
+        };
+      },
+      on_load: function() {
+        const t = jsPsych.timelineVariable('tvars');
+        const frame = jsPsych.getDisplayElement().querySelector('.scene-frame');
+
+        // position overlays (doors, drone, arrows)
+        position_scene_overlays(jsPsych.getDisplayElement());
+
+        // add temporary listener to reveal chosen door immediately
+        const listener = e => {
+          if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
+            const choice = e.code === 'ArrowLeft' ? 'left' : 'right';
+            // update the scene to reveal the chosen door
+            frame.innerHTML = build_scene_html({
+              suggestion: t.suggestion,
+              reveal: true,
+              choice: choice,
+              true_location: t.true_location
+            });
+            position_scene_overlays(jsPsych.getDisplayElement());
+            window.removeEventListener('keydown', listener);
+          }
+        };
+        window.addEventListener('keydown', listener);
+      },
+      on_finish: function(data) {
+        data.choice = data.response === 'ArrowLeft' ? 'left'
+                    : data.response === 'ArrowRight' ? 'right'
+                    : null;
+        data.correct = data.choice === data.true_location;
+      }
+    };
+
+    const trial_timeline = {
+      timeline: [combined_trial],
+      timeline_variables: trial_vars, // same array with { suggestion, true_location } for each trial
+      randomize_order: false
+    };
+
+
+    timeline.push(trial_timeline);
+
+    // Use jsPsych.init on the instance we created earlier
+    jsPsych.run(timeline);
+  }
+  </script>
 </html>
