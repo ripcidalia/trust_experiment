@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <title>Trust Doors — Consent + Questionnaire</title>
+    <title>Trust Doors — Web Version (Reworked)</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
     <!-- Local jsPsych files (adjust paths if your vendor folder differs) -->
@@ -10,10 +10,10 @@
     <script src="jspsych/plugin-html-slider-response.js"></script>
     <script src="jspsych/plugin-html-button-response.js"></script>
     <script src="jspsych/plugin-html-keyboard-response.js"></script>
-    <script src="jspsych/plugin-image-keyboard-response.js"></script>
-    <script src="jspsych/plugin-call-function.js"></script>
+    <script src="jspsych/plugin-fullscreen.js"></script>
 
     <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
+
     <style>
       :root { --bg: #f4f6fb; --card: #ffffff; --accent: #2b6fbf; --muted:#666; }
       html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); }
@@ -24,6 +24,42 @@
       #consent-button { margin-top:18px; padding:12px 20px; background:var(--accent); color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
       #jspsych-target { width:100%; height:100%; }
       .two-line-label { text-align:center; font-size:14px; line-height:1.1; }
+
+      /* --- scene styling --- */
+      .scene-root{ display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; margin:0; padding:0; background:#000; overflow:hidden; }
+      .scene-frame { position:relative; width:100vw; max-width:100vw; line-height:0; overflow:visible; }
+      .background { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; z-index:0 }
+
+      .overlay { position:absolute; z-index:2; pointer-events:none; overflow:visible }
+      .overlay .door-image { width:100%; height:100%; display:block; object-fit:contain; user-select:none; -webkit-user-drag:none; transform-origin:left center; transition: transform 0.55s cubic-bezier(.2,.9,.1,1); }
+      /* door-open triggers horizontal shrink (hinge at left). We'll emulate right-hinge by flipping the transform origin in JS when needed */
+      .door-open { transform: scaleX(0); }
+
+      .revealed-image { position:absolute; z-index:1; top:0; left:0; width:100%; height:100%; display:block; object-fit:contain; }
+
+      /* arrow hidden initially, shown after drone "thinking" buffer */
+      .overlay-arrow { position:absolute; z-index:3; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; visibility:hidden; }
+      .overlay-arrow.show { visibility:visible; }
+
+      .overlay-drone { position:absolute; z-index:4; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; transform: translateX(-50%); left:50%; visibility:visible }
+
+      .trial-counter {
+        position: absolute;
+        top: 2vh;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 6;
+        color: #fff;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: .5px;
+        text-shadow: 0 2px 6px rgba(0,0,0,.6);
+        user-select: none;
+        -webkit-user-select: none;
+        pointer-events: none;
+      }
+
+      
     </style>
   </head>
 
@@ -35,10 +71,6 @@
       <h1>Participant Information & Consent</h1>
       <p>
         You are invited to take part in a study about human–robot trust. Participation is voluntary and anonymous.
-        Data will be recorded anonymously and used for research only. You may stop at any time by closing the browser window.
-      </p>
-      <p>
-        By pressing <strong>"I consent — Start experiment"</strong> you agree to participate, and you allow the experiment to go fullscreen for a distraction-free experience. Press <strong>Esc</strong> any time to exit fullscreen and stop the experiment.
       </p>
       <div style="text-align:center;">
         <button id="consent-button">I consent — Start experiment</button>
@@ -49,111 +81,118 @@
   <!-- jsPsych target (hidden until consent) -->
   <div id="jspsych-target" style="display:none;"></div>
 
-  <!-- Experiment code (runs only after user clicks consent) -->
   <script>
   // small helper: generate a random participant id
-  function randomId(len=8){
-    return Math.random().toString(36).slice(2, 2+len);
+  function randomId(len=8){ return Math.random().toString(36).slice(2, 2+len); }
+  
+  // ====== CENTRAL LOGGING CONFIG ======
+  const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwOikhp2p1ucHzQQ8kyOK5k3UdoUuG46CrC-tyj5N2s1hNx9awFhlI6ir1xkWYvwQLF/exec';
+
+  // Build normalized rows from jsPsych's internal data
+  function buildRowsForLogging(allTrials) {
+    const ua = navigator.userAgent;
+    const nowIso = new Date().toISOString();
+
+    return allTrials.map(d => ({
+      participant_id: d.participant_id || '',
+      seed: d.seed || '',
+      trial_type: d.trial_type || (typeof d.true_location !== 'undefined' ? 'door' : ''),
+
+      trial_index: (typeof d.trial_index !== 'undefined') ? d.trial_index : null,
+      true_location: (typeof d.true_location !== 'undefined') ? d.true_location : null,
+      suggestion: (typeof d.suggestion !== 'undefined') ? d.suggestion : null,
+
+      choice: (typeof d.choice !== 'undefined') ? d.choice : null,          // for door trials
+      correct: (typeof d.correct !== 'undefined') ? d.correct : null,       // for door trials
+      reaction_time_s: (typeof d.reaction_time_s !== 'undefined') ? d.reaction_time_s : null,
+
+      slider_value: (typeof d.slider_value !== 'undefined') ? d.slider_value : null,
+      emergency_choice_index: (d.trial_type === 'survey_button') ? d.choice : null,
+
+      ts: nowIso,
+      user_agent: ua
+    }));
   }
 
-  // robust consent -> fullscreen -> start handler
+  // Send via URL-encoded body to avoid CORS preflight
+  function sendToServer(rows) {
+    if (!LOG_ENDPOINT) return Promise.resolve();
+    const body = new URLSearchParams();
+    body.set('payload', JSON.stringify({ rows }));
+    // keepalive lets the request finish even on navigation
+    return fetch(LOG_ENDPOINT, { method: 'POST', body, keepalive: true });
+  }
+
+
   (function(){
     const consentButton = document.getElementById('consent-button');
-
     consentButton.addEventListener('click', async () => {
-      // small overlay while we prepare
-      const overlay = document.createElement('div');
-      overlay.style.position = 'fixed';
-      overlay.style.left = '0'; overlay.style.top = '0'; overlay.style.width = '100%'; overlay.style.height = '100%';
-      overlay.style.display = 'flex'; overlay.style.alignItems = 'center'; overlay.style.justifyContent = 'center';
-      overlay.style.background = '#000'; overlay.style.color = '#fff'; overlay.style.zIndex = 99999;
-      overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:18px;margin-bottom:8px;">Preparing the experiment…</div><div style="font-size:12px;opacity:0.85">If this screen remains black, press ESC to exit fullscreen and open the browser console (F12).</div></div>';
-      document.body.appendChild(overlay);
-
-      // request fullscreen (user gesture)
-      const docEl = document.documentElement;
-      let fsSuccess = false;
-      function onFsChange(){ fsSuccess = !!(document.fullscreenElement || document.webkitFullscreenElement); document.removeEventListener('fullscreenchange', onFsChange); document.removeEventListener('webkitfullscreenchange', onFsChange); }
-      document.addEventListener('fullscreenchange', onFsChange);
-      document.addEventListener('webkitfullscreenchange', onFsChange);
-
-      try {
-        if (docEl.requestFullscreen) {
-          const p = docEl.requestFullscreen();
-          if (p && p.then) {
-            // wait briefly for promise or event
-            await Promise.race([p, new Promise(r => setTimeout(r, 500))]);
-          } else {
-            await new Promise(r => setTimeout(r, 300));
-          }
-        } else if (docEl.webkitRequestFullscreen) {
-          docEl.webkitRequestFullscreen();
-          await new Promise(r => setTimeout(r, 300));
-        }
-      } catch(e){
-        console.warn("Fullscreen request threw:", e);
-      }
-
-      // Wait a little for fullscreenchange event
-      const deadline = Date.now() + 1000;
-      while (Date.now() < deadline && !fsSuccess) { await new Promise(r => setTimeout(r, 50)); }
-
-      // hide consent and reveal jsPsych target
+      // Hide consent and reveal jsPsych container
       document.getElementById('consent-screen').style.display = 'none';
       const jsTarget = document.getElementById('jspsych-target');
       jsTarget.style.display = 'block';
-      // ensure target fills the screen
-      jsTarget.style.position = 'fixed'; jsTarget.style.left='0'; jsTarget.style.top='0'; jsTarget.style.width='100%'; jsTarget.style.height='100%';
-      jsTarget.style.zIndex = 10; jsTarget.style.background = '#f4f6fb';
+      jsTarget.style.position = 'fixed';
+      jsTarget.style.left = '0';
+      jsTarget.style.top = '0';
+      jsTarget.style.width = '100%';
+      jsTarget.style.height = '100%';
 
-      // small delay to allow layout
-      await new Promise(r => setTimeout(r, 60));
-
+      // Attempt to enter fullscreen immediately (best UX; works on most browsers)
       try {
-        startJsPsych(); // start the experiment timeline
-      } catch(err){
-        console.error("startJsPsych() threw:", err);
-        overlay.innerHTML = '<div style="text-align:center;"><div style="font-size:18px;color:#f88;margin-bottom:8px;">An error occurred while starting the experiment</div><div style="font-size:13px;color:#fff;opacity:0.9">Open the browser console (F12) to see details.</div></div>';
-        return;
+        const el = document.documentElement;
+        if (!document.fullscreenElement) {
+          if (el.requestFullscreen) {
+            await el.requestFullscreen({ navigationUI: 'hide' });
+          } else if (el.webkitRequestFullscreen) {       // Safari
+            el.webkitRequestFullscreen();
+          } else if (el.msRequestFullscreen) {           // Old Edge
+            el.msRequestFullscreen();
+          }
+        }
+      } catch (e) {
+        console.warn('Fullscreen request was blocked or failed:', e);
       }
 
-      // remove overlay after short delay
-      setTimeout(()=>{ if (overlay.parentNode) overlay.parentNode.removeChild(overlay); }, 500);
-    }); // consent click
+      // Start jsPsych either way; we’ll add a plugin fallback inside startJsPsych() if not fullscreen
+      startJsPsych();
+    });
   })();
 
-  // experiment builder (called after consent)
+
   function startJsPsych(){
-    if (typeof initJsPsych !== 'function'){
-      throw new Error("initJsPsych not found. Ensure jsPsych core script was loaded before this code.");
+    if (typeof initJsPsych !== 'function') throw new Error('initJsPsych not found');
+      const jsPsych = initJsPsych({
+        display_element: document.getElementById('jspsych-target'),
+        on_finish: function(){
+          // send normalized rows to your central store
+          const rows = buildRowsForLogging(jsPsych.data.get().values());
+          sendToServer(rows).catch(err => console.warn('Logging failed:', err));
+        }
+      });
+
+    const timeline = [];
+    const pid = randomId(8);
+
+    const needFullscreenTrial =
+      !document.fullscreenElement && // standard
+      !(document.webkitFullscreenElement) && // Safari legacy
+      !(document.msFullscreenElement); // old Edge
+
+    if (needFullscreenTrial) {
+      const enter_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: true,
+        message: '<p>For the best experience, we will switch to full screen.</p>',
+        button_label: 'Enter full screen'
+      };
+      timeline.push(enter_fullscreen);
     }
 
-    // initialize jsPsych once
-    var jsPsych = initJsPsych({
-      display_element: document.getElementById('jspsych-target'),
-      on_finish: function(){
-        // provide CSV download at the end
-        const csv = jsPsych.data.get().csv();
-        const blob = new Blob([csv], {type: 'text/csv'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `trust_experiment_${pid}.csv`;
-        a.textContent = "Download results";
-        a.style.display = 'inline-block';
-        a.style.margin = '20px';
-        document.body.appendChild(a);
-      }
-    });
-    const timeline = [];
-    // participant id
-    const pid = randomId(8);
-    jsPsych.data.addProperties({participant_id: pid});
-
-    // Slider trial: 0 (never) to 100 (always). Two-line labels.
+    // SIMPLE PRE TASK TRIALS
+    // Slider trial: 0 (never) to 100 (always) + live value
     const slider_trial = {
       type: jsPsychHtmlSliderResponse,
-      stimulus: '<h2>How much do you generally trust robots?</h2>',
+      stimulus: '<h2 style="margin-bottom:14px;text-align:center;">How much do you generally trust robots?</h2>',
       labels: [
         '<div class="two-line-label">0<br>(never)</div>',
         '<div class="two-line-label">100<br>(always)</div>'
@@ -164,466 +203,528 @@
       slider_width: 700,
       require_movement: true,
       button_label: 'Next',
-      on_load: function() {
-        var display_element = jsPsych.getDisplayElement();
-        // Make the container a flexbox
-        display_element.style.display = 'flex';
-        display_element.style.flexDirection = 'column';
-        display_element.style.justifyContent = 'center'; // vertical centering
-        display_element.style.alignItems = 'center';     // horizontal centering
-        display_element.style.height = '100vh';          // full viewport height
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
 
-        // Select the slider input
-        var slider = display_element.querySelector('input[type="range"]');
+        // Center the whole screen contents
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center'; // vertical
+        el.style.alignItems = 'center';     // horizontal
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
 
-        // Create a container for the current value
-        var valueDisplay = document.createElement('div');
-        valueDisplay.id = 'slider-value-display';
-        valueDisplay.style.textAlign = 'center';
-        valueDisplay.style.marginBottom = '5px';
-        valueDisplay.textContent = 'Selected value: ' + slider.value;
-
-        // Insert the value display above the slider
-        slider.parentNode.insertBefore(valueDisplay, slider);
-
-        // Update the display whenever the slider moves
-        slider.addEventListener('input', function() {
+        // Add live value readout above the slider
+        const slider = el.querySelector('input[type="range"]');
+        if (slider) {
+          const valueDisplay = document.createElement('div');
+          valueDisplay.id = 'slider-value-display';
+          valueDisplay.style.margin = '6px 0 10px';
+          valueDisplay.style.fontWeight = '600';
           valueDisplay.textContent = 'Selected value: ' + slider.value;
-        });
-      }
+
+          slider.parentNode.insertBefore(valueDisplay, slider);
+
+          slider.addEventListener('input', () => {
+            valueDisplay.textContent = 'Selected value: ' + slider.value;
+          });
+        }
+      },
+      data: { trial_type: 'survey_slider' },
+      on_finish: d => d.slider_value = d.response
     };
 
-    timeline.push(slider_trial);
-
-    // Emergency choice trial: two large buttons
     const emergency_trial = {
       type: jsPsychHtmlButtonResponse,
-      stimulus: '<h2>In an emergency situation, whose judgement do you generally trust more?</h2>',
-      choices: ['My own judgement', 'A robot\'s judgement'],
-      button_html: function(choice, choice_index) {return '<button class="jspsych-btn" style="padding:12px 20px; font-size:16px;">' + choice + '</button>'},
-      margin_vertical: '50px',
-      response_ends_trial: true,
-      on_load: function() {
-        // allow Enter to press the first button if user hits Enter
-        function onKey(e){
-          if (e.key === "Enter"){
-            const btns = document.querySelectorAll('.jspsych-btn');
-            if (btns && btns.length){
-              btns[0].click();
-            }
-          }
-        }
-        document.addEventListener('keydown', onKey);
-        // remove on finish
-        jsPsych.pluginAPI.setTimeout(() => {}, 0);
-        // Ensure removal after trial ends
-        document.addEventListener('jspsych-trial-finish', function cleanup(){
-          document.removeEventListener('keydown', onKey);
-          document.removeEventListener('jspsych-trial-finish', cleanup);
-        });
-      }
+      stimulus: '<h2 style="margin-bottom:18px;text-align:center;">In an emergency situation, whose judgement do you generally trust more?</h2>',
+      choices: ["My own judgement", "A robot's judgement"],
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center'; // vertical
+        el.style.alignItems = 'center';     // horizontal
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
+      },
+      data: { trial_type: 'survey_button' },
+      on_finish: d => d.choice = d.response // index of pressed button
     };
-
-    timeline.push(emergency_trial);
 
     const ready_trial = {
       type: jsPsychHtmlButtonResponse,
-      stimulus: '<h2>You are ready to proceed.</h2><p>Press Continue to start the main task.</p>',
+      stimulus: '<h2 style="margin-bottom:8px;text-align:center;">You are ready to proceed.</h2><p style="margin:0;text-align:center;">Press Continue to start the main task.</p>',
       choices: ['Continue'],
-      button_html: function(choice, choice_index) {return '<button class="jspsych-btn" style="padding:12px 20px; font-size:16px;">' + choice + '</button>'},
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center';
+        el.style.alignItems = 'center';
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
+      }
     };
 
-    timeline.push(ready_trial);
+    timeline.push(slider_trial, emergency_trial, ready_trial);
 
+    // PRELOAD
+    jsPsych.pluginAPI.preloadImages(['assets/background.png','assets/drone.png','assets/door.png','assets/victim.png','assets/empty.png','assets/left_arrow.png','assets/right_arrow.png']);
 
-    /* ---------------------------
-      Preload images from assets/
-    ----------------------------*/
-    jsPsych.pluginAPI.preloadImages([
-      'assets/background.png',
-      'assets/drone.png',
-      'assets/door.png',
-      'assets/victim.png',
-      'assets/empty.png',
-      'assets/left_arrow.png',
-      'assets/right_arrow.png'
-    ]);
+    // layout (original background coordinates in pixels)
+    const layout = { leftDoorX: 479, leftDoorY: 248, rightDoorX: 1132, rightDoorY: 248, arrowOffsetY: -80 };
 
-    /* ---------------------------
-      Debug CSS (optional)
-    ----------------------------*/
-    const debugStyles = `
-      .overlay { outline: 1px dashed lime; }
-      .overlay-arrow { outline: 1px solid magenta; }
-      .overlay-drone { outline: 1px solid cyan; }
-    `;
-    const debugSheet = document.createElement('style');
-    debugSheet.textContent = debugStyles;
-    document.head.appendChild(debugSheet);
-
-
-    /* ---------------------------
-      Layout: only top-left X/Y (in original background pixels)
-      Replace these example coords with your measured values.
-    ----------------------------*/
-    const layout = {
-      bgFit: 'width', // 'width' fits background to viewport width (keeps aspect); could change to 'height' later
-      // top-left coords of doors on the original (authoring) background PNG (in px)
-      leftDoorX: 479,
-      leftDoorY: 248,
-      rightDoorX: 1132,
-      rightDoorY: 248,
-
-      // optional offsets (in original background pixels) for arrow and drone placement
-      arrowOffsetY: -80,     // how far above the door top the arrow should be placed (negative = up)
-      droneOffsetY: -180     // vertical offset (from door top) to place drone above doors
-    };
-
-    /* ---------------------------
-      Build scene HTML (overlays carry original coords as data attributes)
-    ----------------------------*/
-    function build_scene_html({ suggestion = 'none', reveal = false, choice = null, true_location = null }) {
-      const leftDoorImg = (reveal && choice === 'left')
-                          ? (true_location === 'left' ? 'assets/victim.png' : 'assets/empty.png')
-                          : 'assets/door.png';
-      const rightDoorImg = (reveal && choice === 'right')
-                          ? (true_location === 'right' ? 'assets/victim.png' : 'assets/empty.png')
-                          : 'assets/door.png';
-
+    // build scene HTML (uses timeline variables 'true_location' and 'suggestion')
+    function build_scene_html({
+      suggestion = 'none',
+      true_location = null,
+      trial_num = 1,
+      trial_total = 1
+    }) {
       const leftArrowHtml  = suggestion === 'left' ? `<img src="assets/left_arrow.png" class="overlay-arrow" data-side="left">` : '';
       const rightArrowHtml = suggestion === 'right' ? `<img src="assets/right_arrow.png" class="overlay-arrow" data-side="right">` : '';
       const droneHtml      = `<img src="assets/drone.png" class="overlay-drone">`;
 
       return `
-        <div class="scene-root">
+        <div class="scene-root" style="opacity:0" data-true="${true_location}">
           <div class="scene-frame">
+            <div class="trial-counter">${trial_num}/${trial_total}</div>
             <img src="assets/background.png" class="background">
 
-            <!-- overlay containers: placed by JS using data attributes -->
-            <div class="overlay left-door"
-                data-orig-x="${layout.leftDoorX}"
-                data-orig-y="${layout.leftDoorY}">
+            <!-- revealed images behind doors (src will be set in on_load using data-true) -->
+            <img src="assets/empty.png" class="revealed-image left-revealed" data-side="left">
+            <img src="assets/empty.png" class="revealed-image right-revealed" data-side="right">
+
+            <!-- door overlays -->
+            <div class="overlay left-door" data-orig-x="${layout.leftDoorX}" data-orig-y="${layout.leftDoorY}">
               ${leftArrowHtml}
-              <img src="${leftDoorImg}" class="door-image">
+              <img src="assets/door.png" class="door-image">
             </div>
 
-            <div class="overlay right-door"
-                data-orig-x="${layout.rightDoorX}"
-                data-orig-y="${layout.rightDoorY}">
+            <div class="overlay right-door" data-orig-x="${layout.rightDoorX}" data-orig-y="${layout.rightDoorY}">
               ${rightArrowHtml}
-              <img src="${rightDoorImg}" class="door-image">
+              <img src="assets/door.png" class="door-image">
             </div>
 
             ${droneHtml}
           </div>
-        </div>
-
-        <style>
-          /* container */
-          .scene-root{
-            display:flex; justify-content:center; align-items:center;
-            width:100vw; height:100vh; margin:0; padding:0; background:#000; overflow:hidden;
-          }
-          /* frame holds the background image; background scaled to viewport width (keeps aspect) */
-          .scene-frame { position:relative; width:100vw; max-width:100vw; line-height:0; }
-          .background { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; }
-
-          /* overlay containers are absolutely positioned within frame (JS sets left/top/width/height) */
-          .overlay { position:absolute; z-index:2; pointer-events:none; }
-          .door-image { width:100%; height:100%; display:block; object-fit:contain; user-select:none; -webkit-user-drag:none; }
-
-          .overlay-arrow { position:absolute; z-index:3; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; }
-          .overlay-drone { position:absolute; z-index:4; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; transform: translateX(-50%); left:50%; }
-        </style>
-      `;
+        </div>`;
     }
 
-    /* ===========================
-      CSS tweaks (replace existing .scene-root/.scene-frame/.background/.overlay-* CSS)
-      - make overflow visible so arrows/drone above doors aren't clipped
-      - explicit z-index ordering
-      =========================== */
-    const addedStyles = `
-      .scene-root { overflow: visible; }
-      .scene-frame { overflow: visible; }
-      .background { z-index: 0; }
-      .overlay { z-index: 2; }
-      .overlay-arrow { z-index: 3; }
-      .overlay-drone { z-index: 4; }
-    `;
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = addedStyles;
-    document.head.appendChild(styleSheet);
 
-    /* ===========================
-      Utility: decode an <img> element, returns a Promise that resolves when decoded
-      Works in all modern browsers; falls back to onload if decode() is not supported.
-      =========================== */
-    function decodeImage(img) {
-      if (!img) return Promise.resolve();
-      if ('decode' in img) {
-        // decode() returns a Promise that resolves when image data is ready
-        return img.decode().catch(() => Promise.resolve()); // ignore decode errors
-      } else {
-        // fallback
-        return new Promise(resolve => {
-          if (img.complete && img.naturalWidth) return resolve();
-          img.onload = () => resolve();
-          img.onerror = () => resolve();
-        });
-      }
-    }
+    // utility: decode image element (ensure naturalWidth available)
+    function decodeImage(img){ if(!img) return Promise.resolve(); if('decode' in img) return img.decode().catch(()=>Promise.resolve()); return new Promise(resolve=>{ if(img.complete && img.naturalWidth) return resolve(); img.onload=()=>resolve(); img.onerror=()=>resolve(); }); }
 
-    /* ===========================
-      Improved positioning function
-      - waits for background + door + arrow + drone images to decode
-      - computes uniform scale from background.naturalWidth -> displayed width
-      - sets overlay size from door natural size scaled
-      - places overlay top-left at (origX*scale, origY*scale)
-      - places arrow so its BOTTOM sits arrowOffsetY (orig px scaled) above door top:
-          arrowTopInsideOverlay = (arrowOffsetY * scale) - arrowDispH
-      - places drone centered between door centers and offset vertically by droneOffsetY*scale
-      =========================== */
-    async function position_scene_overlays(display_element) {
+    // position overlays similar to your original function but simplified and robust
+    async function position_scene_overlays(display_element){
       const frame = display_element.querySelector('.scene-frame');
+      if(!frame) return;
       const bg = frame.querySelector('.background');
-      if (!frame || !bg) return;
+      await decodeImage(bg);
 
-      // gather all overlay images
-      const leftDoorImg = frame.querySelector('.left-door .door-image');
-      const rightDoorImg = frame.querySelector('.right-door .door-image');
-      const leftArrowImg = frame.querySelector('.left-door .overlay-arrow');
-      const rightArrowImg = frame.querySelector('.right-door .overlay-arrow');
-      const droneImg = frame.querySelector('.overlay-drone');
+      const origBgW = bg.naturalWidth || bg.width; const origBgH = bg.naturalHeight || bg.height;
+      const frameWidth = frame.clientWidth; const scale = frameWidth / origBgW; const frameHeight = Math.round(origBgH * scale);
+      bg.style.width = frameWidth + 'px'; bg.style.height = frameHeight + 'px';
 
-      // decode images (only decode arrow if it exists)
-      await Promise.all([
-        decodeImage(bg),
-        decodeImage(leftDoorImg),
-        decodeImage(rightDoorImg),
-        leftArrowImg ? decodeImage(leftArrowImg) : Promise.resolve(),
-        rightArrowImg ? decodeImage(rightArrowImg) : Promise.resolve(),
-        decodeImage(droneImg)
-      ]);
-
-
-      // compute scale based on background width
-      const origBgW = bg.naturalWidth || bg.width;
-      const origBgH = bg.naturalHeight || bg.height;
-      const frameWidth = frame.clientWidth;
-      const scale = frameWidth / origBgW;
-      const frameHeight = origBgH * scale; // <- define frameHeight here
-      bg.style.width = frameWidth + 'px';
-      bg.style.height = frameHeight + 'px';
-
-      // helper to get natural sizes
-      const nat = el => (el && (el.naturalWidth || el.width)) ? { w: (el.naturalWidth || el.width), h: (el.naturalHeight || el.height) } : null;
-
-      // position door overlays
       const overlays = frame.querySelectorAll('.overlay');
-      overlays.forEach(el => {
-        const origX = parseFloat(el.getAttribute('data-orig-x')) || 0;
-        const origY = parseFloat(el.getAttribute('data-orig-y')) || 0;
-
+      overlays.forEach(el=>{
+        const origX = parseFloat(el.getAttribute('data-orig-x'))||0;
+        const origY = parseFloat(el.getAttribute('data-orig-y'))||0;
         const doorImg = el.querySelector('.door-image');
-        const doorNat = nat(doorImg);
-        const doorNatW = doorNat ? doorNat.w : 360;
-        const doorNatH = doorNat ? doorNat.h : Math.round(doorNatW * 1.3);
 
-        const dispW = Math.round(doorNatW * scale);
-        const dispH = Math.round(doorNatH * scale);
+        const doorW = doorImg.naturalWidth || doorImg.width || 360;
+        const doorH = doorImg.naturalHeight || doorImg.height || Math.round(doorW*1.3);
+
+        // displayed door size after scaling
+        const dispW = Math.round(doorW * scale);
+        const dispH = Math.round(doorH * scale);
+
         const dispLeft = Math.round(origX * scale);
         const dispTop = Math.round(origY * scale);
 
-        el.style.position = 'absolute';
+        // position the overlay container which holds the door image (top-left coordinates + size)
         el.style.left = dispLeft + 'px';
         el.style.top = dispTop + 'px';
         el.style.width = dispW + 'px';
         el.style.height = dispH + 'px';
 
-        // arrow overlay
+        // ---------- revealed image (victim / empty) ----------
+        // Scale and place using the SAME global `scale` as the background/doors.
+        // Works identically for victim.png or empty.png (whatever src was set to earlier).
+        const revealed = el.classList.contains('left-door')
+          ? frame.querySelector('.left-revealed')
+          : frame.querySelector('.right-revealed');
+
+        if (revealed) {
+          // Prefer the image's natural size; if it's not ready yet, fall back to door-relative guess
+          const naturalW = revealed.naturalWidth || 0;
+          const naturalH = revealed.naturalHeight || 0;
+
+          // Scale by the same global background scale
+          let revW = naturalW ? Math.round(naturalW * scale) : Math.round(dispW * 0.9);
+          let revH = naturalH ? Math.round(naturalH * scale) : Math.round(dispH * 0.9);
+
+          // Optional fit factor so the image sits comfortably within the door
+          const fitFactor = 1; // adjust 0.7–0.9 if you want smaller/larger
+          revW = Math.round(revW * fitFactor);
+          revH = Math.round(revH * fitFactor);
+
+          // Center horizontally within the door
+          const revLeftInside = Math.round((dispW - revW) / 2);
+
+          // Vertical placement: CENTER of image aligned to X amount up from the bottom of the door
+          const fractionUpFromBottom = 0.45;             // change to vertically shift the image placement
+          const targetY_fromTop = dispH - (dispH * fractionUpFromBottom); // e.g., 0.75 * door height from top
+          const revTopInside = Math.round(targetY_fromTop - (revH / 2));
+
+          // Apply final pixel positions relative to page
+          revealed.style.width = revW + 'px';
+          revealed.style.height = revH + 'px';
+          revealed.style.left = (dispLeft + revLeftInside) + 'px';
+          revealed.style.top  = (dispTop + revTopInside) + 'px';
+        }
+
+
+
+
+
+        // ---------- arrow positioning ----------
+        // We want the bottom of the arrow to sit just above the top edge of the door.
+        // Put the arrow inside the overlay, set its width relative to the door,
+        // then compute its height and place it with a negative top so its bottom clears the door.
         const arrow = el.querySelector('.overlay-arrow');
         if (arrow) {
-          const arrowNat = nat(arrow);
-          const arrowNatW = arrowNat ? arrowNat.w : Math.round(doorNatW * 0.45);
-          const arrowNatH = arrowNat ? arrowNat.h : Math.round(arrowNatW * 0.6);
+          // width of arrow as fraction of door width
+          const arrowWidthFactor = 0.45; // smaller than before to avoid overlap; tweak if needed
+          arrow.style.position = 'absolute';
+          arrow.style.width = Math.round(dispW * arrowWidthFactor) + 'px';
+          arrow.style.height = 'auto';
+          arrow.style.left = '50%';
+          arrow.style.transform = 'translateX(-50%)';
+          // force layout to get actual pixel height
+          arrow.getBoundingClientRect();
+          const arrowPixelH = arrow.offsetHeight || Math.round(dispW * arrowWidthFactor * 0.6); // fallback estimate
 
-          const arrowDispW = Math.round(arrowNatW * scale);
-          const arrowDispH = Math.round(arrowNatH * scale);
-
-          arrow.style.width = arrowDispW + 'px';
-          arrow.style.height = arrowDispH + 'px';
-
-          const arrowLeftInsideOverlay = Math.round((dispW - arrowDispW) / 2);
-          const arrowDistanceAbove = Math.abs(layout.arrowOffsetY || 80); // px above door top
-          const arrowTopInsideOverlay = -arrowDistanceAbove * scale - arrowDispH;
-
-          arrow.style.left = arrowLeftInsideOverlay + 'px';
-          arrow.style.top = arrowTopInsideOverlay + 'px';
-          arrow.style.display = 'block';
+          const gapPx = Math.round(8 * scale); // margin between arrow bottom and door top (adjustable)
+          // place arrow so its bottom is at (overlay top - gapPx) -> top = -arrowPixelH - gapPx
+          const arrowTopInside = - arrowPixelH - gapPx;
+          arrow.style.top = arrowTopInside + 'px';
         }
       });
 
-      // drone: horizontally center between doors, vertically center in background
-      const leftEl = frame.querySelector('.left-door');
-      const rightEl = frame.querySelector('.right-door');
-      const drone = frame.querySelector('.overlay-drone');
 
-      if (drone && leftEl && rightEl) {
-        const leftW = parseFloat(leftEl.style.width) || 0;
-        const leftL = parseFloat(leftEl.style.left) || 0;
-        const rightW = parseFloat(rightEl.style.width) || 0;
-        const rightL = parseFloat(rightEl.style.left) || 0;
-
-        const leftCenter = leftL + leftW / 2;
-        const rightCenter = rightL + rightW / 2;
-        const centerX = Math.round((leftCenter + rightCenter) / 2);
-
-        // drone size
-        const droneNat = nat(drone);
-        const droneDispW = Math.round((droneNat ? droneNat.w : 160) * scale);
-        const droneDispH = Math.round((droneNat ? droneNat.h : 100) * scale);
-
-        const droneTop = Math.round((frameHeight - droneDispH) / 2); // vertical center
-
-        drone.style.width = droneDispW + 'px';
-        drone.style.height = droneDispH + 'px';
-        drone.style.left = centerX + 'px';
-        drone.style.top = droneTop + 'px';
-        drone.style.transform = 'translateX(-50%)';
-        drone.style.display = 'block';
-      }
-
-      // store scale for reference
-      frame.dataset.scale = scale;
-
-      // -- Debugging log: inspect existence and natural sizes
-      console.group('overlay-debug');
-      console.log('leftArrow element?', !!leftArrowImg, leftArrowImg);
-      console.log('rightArrow element?', !!rightArrowImg, rightArrowImg);
-      console.log('drone element?', !!droneImg, droneImg);
-
-      if (leftArrowImg) console.log('leftArrow natural size', leftArrowImg.naturalWidth, leftArrowImg.naturalHeight);
-      if (rightArrowImg) console.log('rightArrow natural size', rightArrowImg.naturalWidth, rightArrowImg.naturalHeight);
-      if (droneImg) console.log('drone natural size', droneImg.naturalWidth, droneImg.naturalHeight);
-
-      console.log('scale', scale, 'frameWidth', frameWidth, 'bg.naturalWidth', origBgW);
-
-      const leftOverlay = frame.querySelector('.left-door');
-      const rightOverlay = frame.querySelector('.right-door');
-      if (leftOverlay) console.log('left overlay (left,top,w,h):', leftOverlay.style.left, leftOverlay.style.top, leftOverlay.style.width, leftOverlay.style.height);
-      if (rightOverlay) console.log('right overlay (left,top,w,h):', rightOverlay.style.left, rightOverlay.style.top, rightOverlay.style.width, rightOverlay.style.height);
-      console.groupEnd();
+      // drone center between doors and vertically centered relative to background
+      const leftEl = frame.querySelector('.left-door'); const rightEl = frame.querySelector('.right-door'); const drone = frame.querySelector('.overlay-drone');
+      if(drone && leftEl && rightEl){ const leftW = parseFloat(leftEl.style.width)||0; const leftL = parseFloat(leftEl.style.left)||0; const rightW = parseFloat(rightEl.style.width)||0; const rightL = parseFloat(rightEl.style.left)||0; const leftCenter = leftL + leftW/2; const rightCenter = rightL + rightW/2; const droneDispW = Math.round((drone.naturalWidth||160)*scale); const droneDispH = Math.round((drone.naturalHeight||100)*scale); drone.style.width = droneDispW + 'px'; drone.style.height = droneDispH + 'px'; drone.style.left = Math.round((leftCenter + rightCenter)/2) + 'px'; drone.style.top = Math.round((frameHeight - droneDispH)/2) + 'px'; drone.style.transform = 'translateX(-50%)'; }
     }
 
-    /* ===========================
-      New attach_positioning that uses the improved function and ensures a single resize listener
-      per frame (removes it in cleanup)
-      =========================== */
-    function attach_positioning(display_element) {
-      // call the async positioning (no need to await here)
-      position_scene_overlays(display_element);
+    // attach positioning + resize handler
+    function attach_positioning(display_element){ position_scene_overlays(display_element); let to=null; const handler=()=>{ if(to) clearTimeout(to); to=setTimeout(()=>position_scene_overlays(display_element),80); }; window.addEventListener('resize', handler); return ()=>window.removeEventListener('resize', handler); }
 
-      // install a resize handler that debounces and calls the positioning logic
-      let to = null;
-      const resizeHandler = () => {
-        if (to) clearTimeout(to);
-        to = setTimeout(() => position_scene_overlays(display_element), 80);
+    function setDisplayBg(color){
+      const el = jsPsych.getDisplayElement && jsPsych.getDisplayElement();
+      if (el) { el.style.background = color; el.style.backgroundColor = color; }
+    }
+
+    function lockScroll(){
+      document.documentElement.style.overflow = 'hidden';
+      document.body.style.overflow = 'hidden';
+    }
+    function unlockScroll(){
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+    }
+
+    // ---- CONFIG (can be overridden via URL params) ----
+    const CONFIG = {
+      N: 20,                     // total number of door trials
+      drone_success_rate: 0.75,  // P(suggestion is correct | true_location)
+      sequence: null,             // optional: [{true_location:'left', suggestion:'right'}, ...]
+      seed: null                 // <-- NEW: optional RNG seed (integer)
+    };
+
+    // Optional URL overrides: ?N=30&p=0.6&seq=LR,RL,LL,RR  (L/R = victim/suggestion)
+    function parseSequenceParam() {
+      const p = new URLSearchParams(location.search).get('seq');
+      if (!p) return null;
+      const map = { L: 'left', R: 'right' };
+      return p.split(',').map(pairStr => {
+        const pair = pairStr.trim().toUpperCase();
+        if (pair.length < 2) return null;
+        const v = map[pair[0]];
+        const s = map[pair[1]];
+        if (!v || !s) return null;
+        return { true_location: v, suggestion: s };
+      }).filter(Boolean);
+    }
+
+    function readConfigFromURL() {
+      const sp = new URLSearchParams(location.search);
+      const N = parseInt(sp.get('N'), 10);
+      const p = parseFloat(sp.get('p')); // success prob
+      if (!isNaN(N) && N > 0) CONFIG.N = N;
+      if (!isNaN(p) && p >= 0 && p <= 1) CONFIG.drone_success_rate = p;
+      
+      // NEW: seed param support (?seed=1234)
+      const seed = parseInt(sp.get('seed'), 10);
+      if (!isNaN(seed)) CONFIG.seed = seed;
+      
+      const seq = parseSequenceParam();
+      if (seq && seq.length > 0) CONFIG.sequence = seq;
+    }
+
+    // Random generator obeying success rate
+    function generateRandomTrials(N, successRate) {
+      const out = [];
+      for (let i = 0; i < N; i++) {
+        const true_location = RAND() < 0.5 ? 'left' : 'right';
+        const correct = RAND() < successRate;
+        const suggestion = correct ? true_location : (true_location === 'left' ? 'right' : 'left');
+        out.push({ true_location, suggestion });
+      }
+      return out;
+    }
+
+    // Load URL overrides (if any)
+    readConfigFromURL();
+
+    jsPsych.data.addProperties({
+      participant_id: pid,
+      seed: CONFIG.seed
+    });
+
+    // --- Seedable RNG setup ---
+    function mulberry32(a){
+      a |= 0;
+      return function(){
+        a = (a + 0x6D2B79F5) | 0;
+        let t = Math.imul(a ^ (a >>> 15), 1 | a);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
       };
-      window.addEventListener('resize', resizeHandler);
-
-      return () => window.removeEventListener('resize', resizeHandler);
     }
 
-    /* ---------------------------
-      Trials: suggestion -> choice -> reveal
-    ----------------------------*/
-    let trials = [
-      { true_location: 'left', suggestion: 'left' },
-      { true_location: 'right', suggestion: 'right' },
-      { true_location: 'left', suggestion: 'right' },
-      { true_location: 'right', suggestion: 'left' }
-    ];
-    trials = jsPsych.randomization.shuffle(trials);
-    const trial_vars = trials.map(t => ({ tvars: t }));
+    let RAND = Math.random;
+    if (CONFIG.seed !== null) RAND = mulberry32(CONFIG.seed);
+    
+    jsPsych.data.addProperties({
+      config_N: CONFIG.N,
+      config_drone_success_rate: CONFIG.drone_success_rate,
+      config_sequence_len: CONFIG.sequence ? CONFIG.sequence.length : 0
+    });
 
 
-    /* a helper that sets up overlay positioning and a one-time resize listener that is removed in on_finish */
-    function attach_positioning(display_element) {
-      // ensure images decoded; if background not loaded, wait for load
-      const bg = display_element.querySelector('.background');
-      const apply = () => position_scene_overlays(display_element);
-      if (bg && !bg.complete) {
-        bg.onload = apply;
-      } else {
-        apply();
-      }
-      // add resize listener and return a cleanup function
-      const resizeHandler = () => position_scene_overlays(display_element);
-      window.addEventListener('resize', resizeHandler);
-      return () => window.removeEventListener('resize', resizeHandler);
+    // ---- TRIAL VARIABLES ----
+    let trials;
+    if (CONFIG.sequence && CONFIG.sequence.length > 0) {
+      trials = CONFIG.sequence.slice(0, CONFIG.N); // truncate if needed
+    } else {
+      trials = generateRandomTrials(CONFIG.N, CONFIG.drone_success_rate);
+    }
+    // If you want: trials = jsPsych.randomization.shuffle(trials);
+
+
+
+    function make_feedback_trial() {
+      return {
+        type: jsPsychHtmlKeyboardResponse,
+        choices: "NO_KEYS",
+        trial_duration: 700,
+        stimulus: function(){
+          const ok = window._lastOutcome && window._lastOutcome.correct;
+          const word = ok ? 'SUCCESS' : 'FAILURE';
+          const bg = '#0b0b10';
+          const fg = ok ? '#2dd36f' : '#ff5c67';
+          return `
+            <div style="
+              width:100vw; height:100vh;
+              display:flex; align-items:center; justify-content:center;
+              background:${bg}; color:${fg};
+            ">
+              <div style="font-size:72px; font-weight:800; letter-spacing:2px;">
+                ${word}
+              </div>
+            </div>`;
+        },
+        on_load: function(){
+          setDisplayBg('#000'); // you already added this earlier
+          lockScroll();         // keep scroll locked for this short screen too
+          window._lastOutcome = window._lastOutcome || null;
+        }
+      };
     }
 
-    // This replaces your previous suggestion_display, choice_trial, and reveal_trial
-    const combined_trial = {
+
+
+    function make_door_trial(t, idx, total){
+      return {
+        type: jsPsychHtmlKeyboardResponse,
+        stimulus: function(){ 
+          // Start hidden to avoid a raw-frame flash; we’ll reveal after layout.
+          let html = build_scene_html({
+            suggestion: t.suggestion,
+            true_location: t.true_location,
+            trial_num: idx + 1,
+            trial_total: total
+          });
+          return html.replace('<div class="scene-root"', '<div class="scene-root" style="opacity:0"');
+        },
+        choices: ['ArrowLeft','ArrowRight'],
+        response_ends_trial: false,
+        trial_duration: 15000,
+        data: { ...t, trial_index: idx, trial_total: total },
+        on_load: function(){
+          lockScroll(); // prevent scrollbars flicker during door scene
+          setDisplayBg('#000'); // keep background black while the scene prepares
+          const frame = jsPsych.getDisplayElement();
+          const rootEl = frame.querySelector('.scene-root');
+
+          // First layout pass (positions/scales everything), then reveal shortly after.
+          position_scene_overlays(frame).then(()=>{
+            const cleanup = attach_positioning(frame);
+
+            // read params
+            const true_location = rootEl ? rootEl.getAttribute('data-true') : null;
+
+            // set image src
+            const leftRevealed  = frame.querySelector('.left-revealed');
+            const rightRevealed = frame.querySelector('.right-revealed');
+            if(leftRevealed)  leftRevealed.src  = (true_location === 'left')  ? 'assets/victim.png' : 'assets/empty.png';
+            if(rightRevealed) rightRevealed.src = (true_location === 'right') ? 'assets/victim.png' : 'assets/empty.png';
+            if(leftRevealed)  leftRevealed.style.visibility  = 'hidden';
+            if(rightRevealed) rightRevealed.style.visibility = 'hidden';
+
+            // show arrows after buffer
+            const arrowBufferMs = 700;
+            setTimeout(()=>{
+              const arrows = frame.querySelectorAll('.overlay-arrow');
+              arrows.forEach(a=>a.classList.add('show'));
+            }, arrowBufferMs);
+
+            // reveal scene after layout
+            requestAnimationFrame(()=>{ rootEl.style.opacity = '1'; });
+
+            // key handling (same as before)
+            const trialStart = performance.now();
+            let responded = false;
+            function onKey(e){
+              if(responded) return;
+              if(e.code === 'ArrowLeft' || e.code === 'ArrowRight'){
+                responded = true;
+                const choice = e.code === 'ArrowLeft' ? 'left' : 'right';
+                const chosenOverlay = frame.querySelector(`.${choice}-door`);
+                const chosenDoorImg = chosenOverlay.querySelector('.door-image');
+
+                const revealed = frame.querySelector('.' + choice + '-revealed');
+                if(revealed) revealed.style.visibility = 'visible';
+
+                // measure RT at the moment of choice
+                const rt = (performance.now() - trialStart) / 1000;
+
+                // how long to keep the revealed image visible AFTER the door is fully open
+                const revealHoldMs = 1000; // <-- change this value to taste (ms)
+
+                // helper: parse "0.55s, 0s" or "550ms" lists into milliseconds (take the max)
+                function msFromTimeList(str) {
+                  if (!str) return 0;
+                  return str
+                    .split(',')
+                    .map(s => s.trim())
+                    .map(v => v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000)
+                    .reduce((a, b) => Math.max(a, b), 0);
+                }
+
+                let finished = false;
+                const afterOpen = () => {
+                  if (finished) return;
+                  finished = true;
+                  // hold on the revealed state, then finish (feedback shows next)
+                  setTimeout(() => {
+                    const correct = (choice === true_location);
+                    window._lastOutcome = { correct, rt, choice, true_location };
+                    jsPsych.finishTrial({ choice, reaction_time_s: rt, correct });
+                    if (cleanup) cleanup();
+                  }, revealHoldMs);
+                };
+
+                // attach transitionend listeners BEFORE triggering the animation
+                function onEnd(e) {
+                  if (e.propertyName === 'transform') afterOpen();
+                }
+                chosenDoorImg.addEventListener('transitionend', onEnd, { once: true });
+                chosenDoorImg.addEventListener('webkitTransitionEnd', onEnd, { once: true }); // Safari legacy
+
+                // now trigger the door animation
+                chosenDoorImg.getBoundingClientRect(); // force layout
+                chosenDoorImg.classList.add('door-open');
+
+                // fallback if transitionend doesn’t fire
+                const styles  = getComputedStyle(chosenDoorImg);
+                const durMs   = msFromTimeList(styles.transitionDuration);
+                const delayMs = msFromTimeList(styles.transitionDelay);
+                const totalMs = durMs + delayMs;
+                setTimeout(afterOpen, (totalMs > 0 ? totalMs + 40 : 650));
+
+              }
+            }
+            window.addEventListener('keydown', onKey);
+            this.on_finish = function(){ window.removeEventListener('keydown', onKey); };
+          });
+          const el = jsPsych.getDisplayElement();
+          if (el && typeof el.focus === 'function') el.focus();
+        }
+      };
+    }
+
+    // Build interleaved sequence: door -> feedback -> door -> feedback ...
+    trials.forEach((t, idx) => {
+      timeline.push(make_door_trial(t, idx, trials.length));
+      timeline.push(make_feedback_trial());
+    });
+
+
+    // Final thank you screen
+    timeline.push({
       type: jsPsychHtmlKeyboardResponse,
-      stimulus: function() {
-        const t = jsPsych.timelineVariable('tvars'); // your trial variables (suggestion, true_location)
-        // show drone and suggested arrow, doors closed
-        return build_scene_html({ suggestion: t.suggestion, reveal: false });
-      },
-      choices: ['ArrowLeft','ArrowRight'],
-      response_ends_trial: true,
-      trial_duration: 5000, // max time for participant to respond
-      data: function() {
-        const t = jsPsych.timelineVariable('tvars');
-        return {
-          suggestion: t.suggestion,
-          true_location: t.true_location
-        };
-      },
-      on_load: function() {
-        const t = jsPsych.timelineVariable('tvars');
-        const frame = jsPsych.getDisplayElement().querySelector('.scene-frame');
-
-        // position overlays (doors, drone, arrows)
-        position_scene_overlays(jsPsych.getDisplayElement());
-
-        // add temporary listener to reveal chosen door immediately
-        const listener = e => {
-          if (e.code === 'ArrowLeft' || e.code === 'ArrowRight') {
-            const choice = e.code === 'ArrowLeft' ? 'left' : 'right';
-            // update the scene to reveal the chosen door
-            frame.innerHTML = build_scene_html({
-              suggestion: t.suggestion,
-              reveal: true,
-              choice: choice,
-              true_location: t.true_location
-            });
-            position_scene_overlays(jsPsych.getDisplayElement());
-            window.removeEventListener('keydown', listener);
-          }
-        };
-        window.addEventListener('keydown', listener);
-      },
-      on_finish: function(data) {
-        data.choice = data.response === 'ArrowLeft' ? 'left'
-                    : data.response === 'ArrowRight' ? 'right'
-                    : null;
-        data.correct = data.choice === data.true_location;
+      choices: "NO_KEYS",
+      trial_duration: 1500,
+      stimulus: `
+        <div style="
+          width:100vw; height:100vh;
+          display:flex; align-items:center; justify-content:center;
+          background:#000; color:#fff;
+        ">
+          <div style="font-size:28px; font-weight:600;">
+            Thank you! Saving your responses…
+          </div>
+        </div>
+      `,
+      on_load: function () {
+        setDisplayBg('#111'); // keep the page background consistent
+        lockScroll();         // no scrollbars flicker here either
       }
-    };
-
-    const trial_timeline = {
-      timeline: [combined_trial],
-      timeline_variables: trial_vars, // same array with { suggestion, true_location } for each trial
-      randomize_order: false
-    };
+    });
 
 
-    timeline.push(trial_timeline);
+    // -------------------------------------------------------------------------
+    timeline.push({ type: jsPsychFullscreen, fullscreen_mode: false, on_load: function(){ unlockScroll(); } });
 
-    // Use jsPsych.init on the instance we created earlier
+    // Final closing screen
+    timeline.push({
+      type: jsPsychHtmlKeyboardResponse,
+      choices: "NO_KEYS",
+      stimulus: `
+        <div style="
+          width:100vw; height:100vh;
+          display:flex; align-items:center; justify-content:center;
+          background:var(--bg); color:#111;
+          font-size:26px; font-weight:500;
+        ">
+          You may now close this browser tab.
+        </div>
+      `
+    });
+
     jsPsych.run(timeline);
   }
   </script>
