@@ -22,7 +22,7 @@
       h1 { margin:0 0 12px 0; font-size:22px; }
       p { color:var(--muted); line-height:1.45; }
       #consent-button { margin-top:18px; padding:12px 20px; background:var(--accent); color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
-      #jspsych-target { width:100%; height:100%; }
+      #jspsych-target { width:100%; height:100%;}
       .two-line-label { text-align:center; font-size:14px; line-height:1.1; }
 
       /* --- scene styling --- */
@@ -81,6 +81,22 @@
   <!-- jsPsych target (hidden until consent) -->
   <div id="jspsych-target" style="display:none;"></div>
 
+  <!-- final screen (hidden until experiment finishes) -->
+  <div id="final-screen" style="display:none;">
+    <div style="
+      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      padding:20px; box-sizing:border-box; background:#0b0b10; color:#fff; text-align:center;">
+      <div style="max-width:760px;">
+        <h2 style="margin:0 0 10px 0; font-size:28px; font-weight:700;">
+          You may now close this browser tab.
+        </h2>
+        <p style="margin:8px 0 0 0; opacity:.85">
+          Thanks for participating!
+        </p>
+      </div>
+    </div>
+  </div>
+
   <script>
   // small helper: generate a random participant id
   function randomId(len=8){ return Math.random().toString(36).slice(2, 2+len); }
@@ -114,14 +130,47 @@
     }));
   }
 
-  // Send via URL-encoded body to avoid CORS preflight
-  function sendToServer(rows) {
+  // --- Robust logging: sendBeacon first, then fetch keepalive ---
+  function logAsync(rows) {
     if (!LOG_ENDPOINT) return Promise.resolve();
+
     const body = new URLSearchParams();
     body.set('payload', JSON.stringify({ rows }));
-    // keepalive lets the request finish even on navigation
+
+    // Try sendBeacon (best when page is closing)
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body.toString()], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
+      const ok = navigator.sendBeacon(LOG_ENDPOINT, blob);
+      if (ok) return Promise.resolve(); // delivered (fire-and-forget)
+      // fall through if beacon refused (e.g., too large)
+    }
+
+    // Fallback: fetch with keepalive
     return fetch(LOG_ENDPOINT, { method: 'POST', body, keepalive: true });
   }
+
+  // Helper: log a single trial immediately
+  function logTrialRow(d) {
+    try {
+      const rows = buildRowsForLogging([d]);
+      // Fire-and-forget; don't block UI
+      logAsync(rows).catch(err => console.warn('Logging (incremental) failed:', err));
+    } catch (e) {
+      console.warn('Failed to build/log trial row:', e);
+    }
+  }
+
+  // Last-resort flush if the page is being closed
+  let _flushed = false;
+  window.addEventListener('pagehide', function () {
+    if (_flushed) return;
+    _flushed = true;
+    try {
+      const rows = buildRowsForLogging((window.jsPsych?.data?.get?.().values?.()) || []);
+      logAsync(rows);
+    } catch (_) { /* ignore */ }
+  }, { capture: true });
+
 
 
   (function(){
@@ -164,9 +213,24 @@
       const jsPsych = initJsPsych({
         display_element: document.getElementById('jspsych-target'),
         on_finish: function(){
-          // send normalized rows to your central store
+          // 1) Immediately show final screen (no waiting)
+          try {
+            if (document.fullscreenElement && document.exitFullscreen) {
+              document.exitFullscreen().catch(()=>{}); // don't block on this
+            }
+          } catch(_) {}
+
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+
+          const target = document.getElementById('jspsych-target');
+          const final  = document.getElementById('final-screen');
+          if (final)  final.style.display = 'block';
+          if (target) target.style.display = 'none';
+
+          // 2) Kick off logging in the background (fire-and-forget)
           const rows = buildRowsForLogging(jsPsych.data.get().values());
-          sendToServer(rows).catch(err => console.warn('Logging failed:', err));
+          logAsync(rows).catch(err => console.warn('Logging failed:', err));
         }
       });
 
@@ -231,7 +295,10 @@
         }
       },
       data: { trial_type: 'survey_slider' },
-      on_finish: d => d.slider_value = d.response
+      on_finish: d => {
+        d.slider_value = d.response;
+        logTrialRow(d);
+      }
     };
 
     const emergency_trial = {
@@ -248,7 +315,10 @@
         el.style.textAlign = 'center';
       },
       data: { trial_type: 'survey_button' },
-      on_finish: d => d.choice = d.response // index of pressed button
+      on_finish: d => {
+        d.choice = d.response; // index of pressed button
+        logTrialRow(d);
+      }
     };
 
     const ready_trial = {
@@ -668,7 +738,17 @@
               }
             }
             window.addEventListener('keydown', onKey);
-            this.on_finish = function(){ window.removeEventListener('keydown', onKey); };
+            // preserve any existing on_finish and extend it
+            const prevFinish = this.on_finish;
+            this.on_finish = function(data){
+              // call previous cleanup (remove listener)
+              if (prevFinish) prevFinish.call(this, data);
+              window.removeEventListener('keydown', onKey);
+
+              // incremental logging for this door trial
+              // (data includes choice, correct, reaction_time_s we passed to finishTrial)
+              logTrialRow(data);
+            };
           });
           const el = jsPsych.getDisplayElement();
           if (el && typeof el.focus === 'function') el.focus();
@@ -681,50 +761,6 @@
       timeline.push(make_door_trial(t, idx, trials.length));
       timeline.push(make_feedback_trial());
     });
-
-
-    // Final thank you screen
-    timeline.push({
-      type: jsPsychHtmlKeyboardResponse,
-      choices: "NO_KEYS",
-      trial_duration: 1500,
-      stimulus: `
-        <div style="
-          width:100vw; height:100vh;
-          display:flex; align-items:center; justify-content:center;
-          background:#000; color:#fff;
-        ">
-          <div style="font-size:28px; font-weight:600;">
-            Thank you! Saving your responses…
-          </div>
-        </div>
-      `,
-      on_load: function () {
-        setDisplayBg('#111'); // keep the page background consistent
-        lockScroll();         // no scrollbars flicker here either
-      }
-    });
-
-
-    // -------------------------------------------------------------------------
-    timeline.push({ type: jsPsychFullscreen, fullscreen_mode: false, on_load: function(){ unlockScroll(); } });
-
-    // Final closing screen
-    timeline.push({
-      type: jsPsychHtmlKeyboardResponse,
-      choices: "NO_KEYS",
-      stimulus: `
-        <div style="
-          width:100vw; height:100vh;
-          display:flex; align-items:center; justify-content:center;
-          background:var(--bg); color:#111;
-          font-size:26px; font-weight:500;
-        ">
-          You may now close this browser tab.
-        </div>
-      `
-    });
-
     jsPsych.run(timeline);
   }
   </script>
