@@ -16,23 +16,28 @@
 
     <style>
       :root { --bg: #f4f6fb; --card: #ffffff; --accent: #2b6fbf; --muted:#666; }
-      html,body { height:100%; margin:0; font-family:system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); }
-      .center-outer { min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
+
+      /* use safe viewport height on mobile to reduce white flashes */
+      html,body { height:100vh; height:100svh; margin:0; font-family:system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); }
+      #jspsych-target { width:100%; height:100vh; height:100svh; }
+
+      .center-outer { min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
       .card { background:var(--card); border-radius:10px; box-shadow:0 8px 30px rgba(10,10,20,0.08); padding:28px; width:100%; max-width:900px; }
       h1 { margin:0 0 12px 0; font-size:22px; }
       p { color:var(--muted); line-height:1.45; }
       #consent-button { margin-top:18px; padding:12px 20px; background:var(--accent); color:white; border:none; border-radius:8px; font-size:16px; cursor:pointer; }
-      #jspsych-target { width:100%; height:100%;}
       .two-line-label { text-align:center; font-size:14px; line-height:1.1; }
 
       /* --- scene styling --- */
-      .scene-root{ display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; margin:0; padding:0; background:#000; overflow:hidden; }
+      .scene-root{ display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; height:100svh; margin:0; padding:0; background:#000; overflow:hidden; }
       .scene-frame { position:relative; width:100vw; max-width:100vw; line-height:0; overflow:visible; }
       .background { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; z-index:0 }
 
-      .overlay { position:absolute; z-index:2; pointer-events:none; overflow:visible }
-      .overlay .door-image { width:100%; height:100%; display:block; object-fit:contain; user-select:none; -webkit-user-drag:none; transform-origin:left center; transition: transform 0.55s cubic-bezier(.2,.9,.1,1); }
-      /* door-open triggers horizontal shrink (hinge at left). We'll emulate right-hinge by flipping the transform origin in JS when needed */
+      /* make doors tappable; keep inner assets non-interactive */
+      .overlay { position:absolute; z-index:2; overflow:visible; pointer-events:auto; }
+      .overlay .door-image { width:100%; height:100%; display:block; object-fit:contain; user-select:none; -webkit-user-drag:none; transform-origin:left center; transition: transform 0.55s cubic-bezier(.2,.9,.1,1); pointer-events:none; }
+      .overlay .overlay-arrow { pointer-events:none; }
+      /* door-open triggers horizontal shrink (hinge at left) */
       .door-open { transform: scaleX(0); }
 
       .revealed-image { position:absolute; z-index:1; top:0; left:0; width:100%; height:100%; display:block; object-fit:contain; }
@@ -41,7 +46,7 @@
       .overlay-arrow { position:absolute; z-index:3; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; visibility:hidden; }
       .overlay-arrow.show { visibility:visible; }
 
-      .overlay-drone { position:absolute; z-index:4; display:block; user-select:none; -webkit-user-drag:none; pointer-events:none; transform: translateX(-50%); left:50%; visibility:visible }
+      .overlay-drone { position:absolute; z-index:4; display:block; user-select:none; -webkit-user-drag:none; transform: translateX(-50%); left:50%; visibility:visible }
 
       .trial-counter {
         position: absolute;
@@ -59,7 +64,40 @@
         pointer-events: none;
       }
 
-      
+      /* Exit button */
+      #exit-btn {
+        position: fixed; top: 12px; right: 12px; z-index: 10000;
+        padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer;
+        background: #333; color: #fff; font-weight: 600; opacity: 0.85;
+      }
+      #exit-btn:hover { opacity: 1; }
+
+      /* Modal */
+      .modal-overlay {
+        position: fixed; inset: 0; background: rgba(0,0,0,.6);
+        display: none; align-items: center; justify-content: center; z-index: 10001;
+      }
+      .modal-card {
+        width: 92%; max-width: 520px; background: #fff; border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,.25); padding: 22px;
+        font-family: system-ui, Segoe UI, Roboto, Arial;
+      }
+      .modal-card h3 { margin: 0 0 8px 0; font-size: 20px; }
+      .modal-card p { margin: 0 0 18px 0; color: #333; }
+      .modal-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+      .modal-actions button {
+        flex: 1; padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer; font-weight: 700;
+      }
+      .btn-secondary { background:#eee; color:#333; }
+      .btn-danger { background:#ff5c67; color:#fff; }
+      .btn-primary { background:#2b6fbf; color:#fff; }
+
+      /* Only force black between trials during the main task (prevents white flicker on feedback->door only) */
+      body.task-dark #jspsych-target,
+      body.task-dark .jspsych-display-element,
+      body.task-dark .jspsych-content-wrapper {
+        background: #000 !important;
+      }
     </style>
   </head>
 
@@ -84,7 +122,7 @@
   <!-- final screen (hidden until experiment finishes) -->
   <div id="final-screen" style="display:none;">
     <div style="
-      min-height:100vh; display:flex; align-items:center; justify-content:center;
+      min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center;
       padding:20px; box-sizing:border-box; background:#0b0b10; color:#fff; text-align:center;">
       <div style="max-width:760px;">
         <h2 style="margin:0 0 10px 0; font-size:28px; font-weight:700;">
@@ -97,12 +135,73 @@
     </div>
   </div>
 
+  <!-- Early exit (keep data) -->
+  <div id="final-keep-screen" style="display:none;">
+    <div style="min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center;
+                padding:20px; box-sizing:border-box; background:#0b0b10; color:#fff; text-align:center;">
+      <div style="max-width:760px;">
+        <h2 style="margin:0 0 10px 0; font-size:28px; font-weight:700;">
+          You ended the study early (data kept).
+        </h2>
+        <p style="margin:8px 0 0 0; opacity:.85">
+          Thanks for your time — your responses up to this point were saved.
+          You may now close this browser tab.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Early exit (discard data) -->
+  <div id="final-discard-screen" style="display:none;">
+    <div style="min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center;
+                padding:20px; box-sizing:border-box; background:#0b0b10; color:#fff; text-align:center;">
+      <div style="max-width:760px;">
+        <h2 style="margin:0 0 10px 0; font-size:28px; font-weight:700;">
+          You withdrew (data discarded).
+        </h2>
+        <p style="margin:8px 0 0 0; opacity:.85">
+          We’ve removed your responses and ended the study.
+          You may now close this browser tab.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exit button (hidden until experiment starts) -->
+  <button id="exit-btn" style="display:none;">Exit</button>
+
+  <!-- Mobile choice bar (shown only during door trials on mobile) -->
+  <div id="mobile-choices" style="display:none; position:fixed; left:0; right:0; bottom:0; z-index:10000;
+    padding:12px; box-sizing:border-box; gap:12px;">
+    <div style="display:flex; gap:12px;">
+      <button id="mob-left"  style="flex:1; padding:14px; font-size:18px; border:none; border-radius:10px;">⬅︎ Left</button>
+      <button id="mob-right" style="flex:1; padding:14px; font-size:18px; border:none; border-radius:10px;">Right ➡︎</button>
+    </div>
+  </div>
+
+  <!-- Exit modal -->
+  <div id="exit-modal" class="modal-overlay">
+    <div class="modal-card">
+      <h3>End experiment?</h3>
+      <p>You can resume, or end now. If you choose to discard, we’ll remove the data collected so far.</p>
+      <div class="modal-actions">
+        <button id="exit-resume" class="btn-secondary">Resume</button>
+        <button id="exit-keep" class="btn-primary">Exit & keep data</button>
+        <button id="exit-discard" class="btn-danger">Exit & discard data</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   // small helper: generate a random participant id
   function randomId(len=8){ return Math.random().toString(36).slice(2, 2+len); }
-  
+
+  // Mobile-ish detection (UA or coarse pointer + narrow width)
+  const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+    || (matchMedia('(pointer:coarse)').matches && screen.width < 1024);
+
   // ====== CENTRAL LOGGING CONFIG ======
-  const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwOikhp2p1ucHzQQ8kyOK5k3UdoUuG46CrC-tyj5N2s1hNx9awFhlI6ir1xkWYvwQLF/exec';
+  const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwtP8jaBQYYqcGgFE1b9uhxXBlxqMMp0WGccFjbart7Z0LorjZI7FUVKdY2umIV_WjO/exec';
 
   // Build normalized rows from jsPsych's internal data
   function buildRowsForLogging(allTrials) {
@@ -113,13 +212,14 @@
       participant_id: d.participant_id || '',
       seed: d.seed || '',
       trial_type: d.trial_type || (typeof d.true_location !== 'undefined' ? 'door' : ''),
+      victim_skin: d.victim_src || null,
 
       trial_index: (typeof d.trial_index !== 'undefined') ? d.trial_index : null,
       true_location: (typeof d.true_location !== 'undefined') ? d.true_location : null,
       suggestion: (typeof d.suggestion !== 'undefined') ? d.suggestion : null,
 
-      choice: (typeof d.choice !== 'undefined') ? d.choice : null,          // for door trials
-      correct: (typeof d.correct !== 'undefined') ? d.correct : null,       // for door trials
+      choice: (typeof d.choice !== 'undefined') ? d.choice : null,
+      correct: (typeof d.correct !== 'undefined') ? d.correct : null,
       reaction_time_s: (typeof d.reaction_time_s !== 'undefined') ? d.reaction_time_s : null,
 
       slider_value: (typeof d.slider_value !== 'undefined') ? d.slider_value : null,
@@ -130,6 +230,42 @@
     }));
   }
 
+  // --- Victim skin loading helpers ---
+  const VICTIM_MANIFEST_URL = 'assets/victims/manifest.json';
+
+  // Fallback list used if manifest.json is missing
+  const DEFAULT_VICTIM_SKINS = [
+    'assets/victims/victim1.png',
+    'assets/victims/victim1_copy.png',
+    'assets/victims/victim2.png',
+    'assets/victims/victim2_copy.png',
+    'assets/victims/victim3.png',
+    'assets/victims/victim3_copy.png',
+    'assets/victims/victim4.png',
+    'assets/victims/victim4_copy.png',
+    'assets/victims/victim5.png',
+    'assets/victims/victim5_copy.png',
+    'assets/victims/victim6.png',
+    'assets/victims/victim6_copy.png'
+  ];
+
+  async function loadVictimSkins() {
+    try {
+      const res = await fetch(VICTIM_MANIFEST_URL, { cache: 'no-store' });
+      if (!res.ok) throw new Error('manifest fetch failed');
+      const arr = await res.json();
+      if (!Array.isArray(arr) || arr.length === 0) throw new Error('empty/invalid manifest');
+
+      return arr.map(x => {
+        if (typeof x !== 'string') return null;
+        return x.startsWith('assets/') ? x : `assets/victims/${x}`;
+      }).filter(Boolean);
+    } catch (e) {
+      console.warn('Victim manifest not found or invalid, using fallback list.', e);
+      return DEFAULT_VICTIM_SKINS.slice();
+    }
+  }
+
   // --- Robust logging: sendBeacon first, then fetch keepalive ---
   function logAsync(rows) {
     if (!LOG_ENDPOINT) return Promise.resolve();
@@ -137,23 +273,19 @@
     const body = new URLSearchParams();
     body.set('payload', JSON.stringify({ rows }));
 
-    // Try sendBeacon (best when page is closing)
     if (navigator.sendBeacon) {
       const blob = new Blob([body.toString()], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
       const ok = navigator.sendBeacon(LOG_ENDPOINT, blob);
-      if (ok) return Promise.resolve(); // delivered (fire-and-forget)
-      // fall through if beacon refused (e.g., too large)
+      if (ok) return Promise.resolve();
     }
-
-    // Fallback: fetch with keepalive
     return fetch(LOG_ENDPOINT, { method: 'POST', body, keepalive: true });
   }
 
   // Helper: log a single trial immediately
   function logTrialRow(d) {
+    if (window.__DISCARD_DATA__) return;
     try {
       const rows = buildRowsForLogging([d]);
-      // Fire-and-forget; don't block UI
       logAsync(rows).catch(err => console.warn('Logging (incremental) failed:', err));
     } catch (e) {
       console.warn('Failed to build/log trial row:', e);
@@ -171,8 +303,6 @@
     } catch (_) { /* ignore */ }
   }, { capture: true });
 
-
-
   (function(){
     const consentButton = document.getElementById('consent-button');
     consentButton.addEventListener('click', async () => {
@@ -186,334 +316,251 @@
       jsTarget.style.width = '100%';
       jsTarget.style.height = '100%';
 
-      // Attempt to enter fullscreen immediately (best UX; works on most browsers)
-      try {
-        const el = document.documentElement;
-        if (!document.fullscreenElement) {
-          if (el.requestFullscreen) {
-            await el.requestFullscreen({ navigationUI: 'hide' });
-          } else if (el.webkitRequestFullscreen) {       // Safari
-            el.webkitRequestFullscreen();
-          } else if (el.msRequestFullscreen) {           // Old Edge
-            el.msRequestFullscreen();
+      // Try to enter fullscreen (desktop only)
+      if (!IS_MOBILE) {
+        try {
+          const el = document.documentElement;
+          if (!document.fullscreenElement) {
+            if (el.requestFullscreen) {
+              await el.requestFullscreen({ navigationUI: 'hide' });
+            } else if (el.webkitRequestFullscreen) {
+              el.webkitRequestFullscreen();
+            } else if (el.msRequestFullscreen) {
+              el.msRequestFullscreen();
+            }
           }
+        } catch (e) {
+          console.warn('Fullscreen request was blocked or failed:', e);
         }
-      } catch (e) {
-        console.warn('Fullscreen request was blocked or failed:', e);
       }
 
-      // Start jsPsych either way; we’ll add a plugin fallback inside startJsPsych() if not fullscreen
-      startJsPsych();
+      await startJsPsych();
     });
   })();
 
+  /* ---------- shared scene helpers (GLOBAL) ---------- */
 
-  function startJsPsych(){
+  function decodeImage(img){
+    if(!img) return Promise.resolve();
+    if('decode' in img) return img.decode().catch(()=>Promise.resolve());
+    return new Promise(resolve=>{
+      if(img.complete && img.naturalWidth) return resolve();
+      img.onload=()=>resolve();
+      img.onerror=()=>resolve();
+    });
+  }
+
+  async function position_scene_overlays(display_element){
+    const frame = display_element.querySelector('.scene-frame');
+    if(!frame) return;
+
+    const bg = frame.querySelector('.background');
+    await decodeImage(bg);
+
+    const origBgW = bg.naturalWidth || bg.width;
+    const origBgH = bg.naturalHeight || bg.height;
+    const frameWidth  = frame.clientWidth;
+    const scale       = frameWidth / origBgW;
+    const frameHeight = Math.round(origBgH * scale);
+
+    bg.style.width  = frameWidth + 'px';
+    bg.style.height = frameHeight + 'px';
+
+    const overlays = frame.querySelectorAll('.overlay');
+    overlays.forEach(el=>{
+      const origX  = parseFloat(el.getAttribute('data-orig-x'))||0;
+      const origY  = parseFloat(el.getAttribute('data-orig-y'))||0;
+      const doorImg= el.querySelector('.door-image');
+
+      const doorW = doorImg.naturalWidth  || doorImg.width  || 360;
+      const doorH = doorImg.naturalHeight || doorImg.height || Math.round(doorW*1.3);
+
+      const dispW = Math.round(doorW * scale);
+      const dispH = Math.round(doorH * scale);
+
+      const dispLeft = Math.round(origX * scale);
+      const dispTop  = Math.round(origY * scale);
+
+      el.style.left   = dispLeft + 'px';
+      el.style.top    = dispTop  + 'px';
+      el.style.width  = dispW    + 'px';
+      el.style.height = dispH    + 'px';
+
+      const revealed = el.classList.contains('left-door')
+        ? frame.querySelector('.left-revealed')
+        : frame.querySelector('.right-revealed');
+
+      if (revealed) {
+        const naturalW = revealed.naturalWidth  || 0;
+        const naturalH = revealed.naturalHeight || 0;
+
+        let revW = naturalW ? Math.round(naturalW * scale) : Math.round(dispW * 0.9);
+        let revH = naturalH ? Math.round(naturalH * scale) : Math.round(dispH * 0.9);
+
+        const fitFactor = 1;
+        revW = Math.round(revW * fitFactor);
+        revH = Math.round(revH * fitFactor);
+
+        const revLeftInside = Math.round((dispW - revW) / 2);
+
+        const fractionUpFromBottom = 0.45;
+        const targetY_fromTop = dispH - (dispH * fractionUpFromBottom);
+        const revTopInside = Math.round(targetY_fromTop - (revH / 2));
+
+        revealed.style.width  = revW + 'px';
+        revealed.style.height = revH + 'px';
+        revealed.style.left   = (dispLeft + revLeftInside) + 'px';
+        revealed.style.top    = (dispTop  + revTopInside)  + 'px';
+      }
+
+      const arrow = el.querySelector('.overlay-arrow');
+      if (arrow) {
+        const arrowWidthFactor = 0.45;
+        arrow.style.position = 'absolute';
+        arrow.style.width    = Math.round(dispW * arrowWidthFactor) + 'px';
+        arrow.style.height   = 'auto';
+        arrow.style.left     = '50%';
+        arrow.style.transform= 'translateX(-50%)';
+        arrow.getBoundingClientRect();
+        const arrowPixelH = arrow.offsetHeight || Math.round(dispW * arrowWidthFactor * 0.6);
+        const gapPx = Math.round(8 * scale);
+        arrow.style.top = (- arrowPixelH - gapPx) + 'px';
+      }
+    });
+
+    const leftEl  = frame.querySelector('.left-door');
+    const rightEl = frame.querySelector('.right-door');
+    const drone   = frame.querySelector('.overlay-drone');
+    if(drone && leftEl && rightEl){
+      const leftW = parseFloat(leftEl.style.width)||0;
+      const leftL = parseFloat(leftEl.style.left)||0;
+      const rightW= parseFloat(rightEl.style.width)||0;
+      const rightL= parseFloat(rightEl.style.left)||0;
+      const leftCenter  = leftL  + leftW/2;
+      const rightCenter = rightL + rightW/2;
+
+      const scale = (parseFloat(bg.style.width) || frame.clientWidth) / (bg.naturalWidth || bg.width);
+      const droneDispW = Math.round((drone.naturalWidth || 160) * scale);
+      const droneDispH = Math.round((drone.naturalHeight|| 100) * scale);
+      const frameHeight = Math.round((bg.naturalHeight || bg.height) * scale);
+
+      drone.style.width  = droneDispW + 'px';
+      drone.style.height = droneDispH + 'px';
+      drone.style.left   = Math.round((leftCenter + rightCenter) / 2) + 'px';
+      drone.style.top    = Math.round((frameHeight - droneDispH) / 2) + 'px';
+      drone.style.transform = 'translateX(-50%)';
+    }
+  }
+
+  function attach_positioning(display_element){
+    position_scene_overlays(display_element);
+    let to=null;
+    const handler=()=>{
+      if(to) clearTimeout(to);
+      to=setTimeout(()=>position_scene_overlays(display_element),80);
+    };
+    window.addEventListener('resize', handler);
+    return ()=>window.removeEventListener('resize', handler);
+  }
+
+  function setDisplayBg(color){
+    const el = (typeof jsPsych !== 'undefined' && jsPsych.getDisplayElement) ? jsPsych.getDisplayElement() : null;
+    if (el) { el.style.background = color; el.style.backgroundColor = color; }
+  }
+
+  function lockScroll(){
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function unlockScroll(){
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  // Optional: endpoint action to delete a participant's rows server-side.
+  async function requestDeleteByParticipant(participantId) {
+    if (!participantId || !LOG_ENDPOINT) return;
+    const body = new URLSearchParams();
+    body.set('action', 'delete_by_participant');
+    body.set('participant_id', participantId);
+
+    if (navigator.sendBeacon) {
+      const blob = new Blob([body.toString()], { type: 'application/x-www-form-urlencoded;charset=UTF-8' });
+      navigator.sendBeacon(LOG_ENDPOINT, blob);
+      return;
+    }
+    try { await fetch(LOG_ENDPOINT, { method: 'POST', body, keepalive: true }); } catch(_) {}
+  }
+
+  // Simple modal controls
+  function showExitModal(jsPsych){
+    try { jsPsych.pauseExperiment(); } catch(_) {}
+    document.getElementById('exit-modal').style.display = 'flex';
+  }
+  function hideExitModal(jsPsych){
+    document.getElementById('exit-modal').style.display = 'none';
+    try { jsPsych.resumeExperiment(); } catch(_) {}
+  }
+
+  function showEndScreenKeep() {
+    document.getElementById('final-screen')?.style.setProperty('display','none');
+    document.getElementById('final-keep-screen')?.style.setProperty('display','block');
+    document.getElementById('jspsych-target')?.style.setProperty('display','none');
+    document.getElementById('exit-btn')?.style.setProperty('display','none');
+  }
+  function showEndScreenDiscard() {
+    document.getElementById('final-screen')?.style.setProperty('display','none');
+    document.getElementById('final-discard-screen')?.style.setProperty('display','block');
+    document.getElementById('jspsych-target')?.style.setProperty('display','none');
+    document.getElementById('exit-btn')?.style.setProperty('display','none');
+  }
+
+  /* ---------- main ---------- */
+
+  async function startJsPsych(){
     if (typeof initJsPsych !== 'function') throw new Error('initJsPsych not found');
-      const jsPsych = initJsPsych({
-        display_element: document.getElementById('jspsych-target'),
-        on_finish: function(){
-          // 1) Immediately show final screen (no waiting)
-          try {
-            if (document.fullscreenElement && document.exitFullscreen) {
-              document.exitFullscreen().catch(()=>{}); // don't block on this
-            }
-          } catch(_) {}
 
-          document.documentElement.style.overflow = '';
-          document.body.style.overflow = '';
+    const jsPsych = initJsPsych({
+      display_element: document.getElementById('jspsych-target'),
+      on_finish: function(){
+        if (window.__MANUAL_END__) return;
 
-          const target = document.getElementById('jspsych-target');
-          const final  = document.getElementById('final-screen');
-          if (final)  final.style.display = 'block';
-          if (target) target.style.display = 'none';
+        try { if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } } catch(_){}
+        document.documentElement.style.overflow = '';
+        document.body.style.overflow = '';
 
-          // 2) Kick off logging in the background (fire-and-forget)
+        const target = document.getElementById('jspsych-target');
+        const final  = document.getElementById('final-screen');
+        const keep   = document.getElementById('final-keep-screen');
+        const disc   = document.getElementById('final-discard-screen');
+
+        if (target) target.style.display = 'none';
+        document.getElementById('exit-btn')?.style.setProperty('display','none');
+        document.body.classList.remove('task-dark');
+
+        if (window.__END_REASON__ === 'discard') {
+          disc?.style.setProperty('display','block');
+        } else if (window.__END_REASON__ === 'keep') {
+          keep?.style.setProperty('display','block');
+        } else {
+          final?.style.setProperty('display','block');
+        }
+
+        if (!window.__DISCARD_DATA__) {
           const rows = buildRowsForLogging(jsPsych.data.get().values());
           logAsync(rows).catch(err => console.warn('Logging failed:', err));
         }
-      });
+      }
+    });
 
     const timeline = [];
     const pid = randomId(8);
+    window.PID = pid;
+    document.getElementById('exit-btn').style.display = 'block';
 
-    const needFullscreenTrial =
-      !document.fullscreenElement && // standard
-      !(document.webkitFullscreenElement) && // Safari legacy
-      !(document.msFullscreenElement); // old Edge
+    // ---- CONFIG (URL-overridable) + RNG SEED ----
+    const CONFIG = { N: 20, drone_success_rate: 0.75, sequence: null, seed: null };
 
-    if (needFullscreenTrial) {
-      const enter_fullscreen = {
-        type: jsPsychFullscreen,
-        fullscreen_mode: true,
-        message: '<p>For the best experience, we will switch to full screen.</p>',
-        button_label: 'Enter full screen'
-      };
-      timeline.push(enter_fullscreen);
-    }
-
-    // SIMPLE PRE TASK TRIALS
-    // Slider trial: 0 (never) to 100 (always) + live value
-    const slider_trial = {
-      type: jsPsychHtmlSliderResponse,
-      stimulus: '<h2 style="margin-bottom:14px;text-align:center;">How much do you generally trust robots?</h2>',
-      labels: [
-        '<div class="two-line-label">0<br>(never)</div>',
-        '<div class="two-line-label">100<br>(always)</div>'
-      ],
-      min: 0,
-      max: 100,
-      start: 50,
-      slider_width: 700,
-      require_movement: true,
-      button_label: 'Next',
-      on_load: function () {
-        const el = jsPsych.getDisplayElement();
-
-        // Center the whole screen contents
-        el.style.display = 'flex';
-        el.style.flexDirection = 'column';
-        el.style.justifyContent = 'center'; // vertical
-        el.style.alignItems = 'center';     // horizontal
-        el.style.minHeight = '100vh';
-        el.style.textAlign = 'center';
-
-        // Add live value readout above the slider
-        const slider = el.querySelector('input[type="range"]');
-        if (slider) {
-          const valueDisplay = document.createElement('div');
-          valueDisplay.id = 'slider-value-display';
-          valueDisplay.style.margin = '6px 0 10px';
-          valueDisplay.style.fontWeight = '600';
-          valueDisplay.textContent = 'Selected value: ' + slider.value;
-
-          slider.parentNode.insertBefore(valueDisplay, slider);
-
-          slider.addEventListener('input', () => {
-            valueDisplay.textContent = 'Selected value: ' + slider.value;
-          });
-        }
-      },
-      data: { trial_type: 'survey_slider' },
-      on_finish: d => {
-        d.slider_value = d.response;
-        logTrialRow(d);
-      }
-    };
-
-    const emergency_trial = {
-      type: jsPsychHtmlButtonResponse,
-      stimulus: '<h2 style="margin-bottom:18px;text-align:center;">In an emergency situation, whose judgement do you generally trust more?</h2>',
-      choices: ["My own judgement", "A robot's judgement"],
-      on_load: function () {
-        const el = jsPsych.getDisplayElement();
-        el.style.display = 'flex';
-        el.style.flexDirection = 'column';
-        el.style.justifyContent = 'center'; // vertical
-        el.style.alignItems = 'center';     // horizontal
-        el.style.minHeight = '100vh';
-        el.style.textAlign = 'center';
-      },
-      data: { trial_type: 'survey_button' },
-      on_finish: d => {
-        d.choice = d.response; // index of pressed button
-        logTrialRow(d);
-      }
-    };
-
-    const ready_trial = {
-      type: jsPsychHtmlButtonResponse,
-      stimulus: '<h2 style="margin-bottom:8px;text-align:center;">You are ready to proceed.</h2><p style="margin:0;text-align:center;">Press Continue to start the main task.</p>',
-      choices: ['Continue'],
-      on_load: function () {
-        const el = jsPsych.getDisplayElement();
-        el.style.display = 'flex';
-        el.style.flexDirection = 'column';
-        el.style.justifyContent = 'center';
-        el.style.alignItems = 'center';
-        el.style.minHeight = '100vh';
-        el.style.textAlign = 'center';
-      }
-    };
-
-    timeline.push(slider_trial, emergency_trial, ready_trial);
-
-    // PRELOAD
-    jsPsych.pluginAPI.preloadImages(['assets/background.png','assets/drone.png','assets/door.png','assets/victim.png','assets/empty.png','assets/left_arrow.png','assets/right_arrow.png']);
-
-    // layout (original background coordinates in pixels)
-    const layout = { leftDoorX: 479, leftDoorY: 248, rightDoorX: 1132, rightDoorY: 248, arrowOffsetY: -80 };
-
-    // build scene HTML (uses timeline variables 'true_location' and 'suggestion')
-    function build_scene_html({
-      suggestion = 'none',
-      true_location = null,
-      trial_num = 1,
-      trial_total = 1
-    }) {
-      const leftArrowHtml  = suggestion === 'left' ? `<img src="assets/left_arrow.png" class="overlay-arrow" data-side="left">` : '';
-      const rightArrowHtml = suggestion === 'right' ? `<img src="assets/right_arrow.png" class="overlay-arrow" data-side="right">` : '';
-      const droneHtml      = `<img src="assets/drone.png" class="overlay-drone">`;
-
-      return `
-        <div class="scene-root" style="opacity:0" data-true="${true_location}">
-          <div class="scene-frame">
-            <div class="trial-counter">${trial_num}/${trial_total}</div>
-            <img src="assets/background.png" class="background">
-
-            <!-- revealed images behind doors (src will be set in on_load using data-true) -->
-            <img src="assets/empty.png" class="revealed-image left-revealed" data-side="left">
-            <img src="assets/empty.png" class="revealed-image right-revealed" data-side="right">
-
-            <!-- door overlays -->
-            <div class="overlay left-door" data-orig-x="${layout.leftDoorX}" data-orig-y="${layout.leftDoorY}">
-              ${leftArrowHtml}
-              <img src="assets/door.png" class="door-image">
-            </div>
-
-            <div class="overlay right-door" data-orig-x="${layout.rightDoorX}" data-orig-y="${layout.rightDoorY}">
-              ${rightArrowHtml}
-              <img src="assets/door.png" class="door-image">
-            </div>
-
-            ${droneHtml}
-          </div>
-        </div>`;
-    }
-
-
-    // utility: decode image element (ensure naturalWidth available)
-    function decodeImage(img){ if(!img) return Promise.resolve(); if('decode' in img) return img.decode().catch(()=>Promise.resolve()); return new Promise(resolve=>{ if(img.complete && img.naturalWidth) return resolve(); img.onload=()=>resolve(); img.onerror=()=>resolve(); }); }
-
-    // position overlays similar to your original function but simplified and robust
-    async function position_scene_overlays(display_element){
-      const frame = display_element.querySelector('.scene-frame');
-      if(!frame) return;
-      const bg = frame.querySelector('.background');
-      await decodeImage(bg);
-
-      const origBgW = bg.naturalWidth || bg.width; const origBgH = bg.naturalHeight || bg.height;
-      const frameWidth = frame.clientWidth; const scale = frameWidth / origBgW; const frameHeight = Math.round(origBgH * scale);
-      bg.style.width = frameWidth + 'px'; bg.style.height = frameHeight + 'px';
-
-      const overlays = frame.querySelectorAll('.overlay');
-      overlays.forEach(el=>{
-        const origX = parseFloat(el.getAttribute('data-orig-x'))||0;
-        const origY = parseFloat(el.getAttribute('data-orig-y'))||0;
-        const doorImg = el.querySelector('.door-image');
-
-        const doorW = doorImg.naturalWidth || doorImg.width || 360;
-        const doorH = doorImg.naturalHeight || doorImg.height || Math.round(doorW*1.3);
-
-        // displayed door size after scaling
-        const dispW = Math.round(doorW * scale);
-        const dispH = Math.round(doorH * scale);
-
-        const dispLeft = Math.round(origX * scale);
-        const dispTop = Math.round(origY * scale);
-
-        // position the overlay container which holds the door image (top-left coordinates + size)
-        el.style.left = dispLeft + 'px';
-        el.style.top = dispTop + 'px';
-        el.style.width = dispW + 'px';
-        el.style.height = dispH + 'px';
-
-        // ---------- revealed image (victim / empty) ----------
-        // Scale and place using the SAME global `scale` as the background/doors.
-        // Works identically for victim.png or empty.png (whatever src was set to earlier).
-        const revealed = el.classList.contains('left-door')
-          ? frame.querySelector('.left-revealed')
-          : frame.querySelector('.right-revealed');
-
-        if (revealed) {
-          // Prefer the image's natural size; if it's not ready yet, fall back to door-relative guess
-          const naturalW = revealed.naturalWidth || 0;
-          const naturalH = revealed.naturalHeight || 0;
-
-          // Scale by the same global background scale
-          let revW = naturalW ? Math.round(naturalW * scale) : Math.round(dispW * 0.9);
-          let revH = naturalH ? Math.round(naturalH * scale) : Math.round(dispH * 0.9);
-
-          // Optional fit factor so the image sits comfortably within the door
-          const fitFactor = 1; // adjust 0.7–0.9 if you want smaller/larger
-          revW = Math.round(revW * fitFactor);
-          revH = Math.round(revH * fitFactor);
-
-          // Center horizontally within the door
-          const revLeftInside = Math.round((dispW - revW) / 2);
-
-          // Vertical placement: CENTER of image aligned to X amount up from the bottom of the door
-          const fractionUpFromBottom = 0.45;             // change to vertically shift the image placement
-          const targetY_fromTop = dispH - (dispH * fractionUpFromBottom); // e.g., 0.75 * door height from top
-          const revTopInside = Math.round(targetY_fromTop - (revH / 2));
-
-          // Apply final pixel positions relative to page
-          revealed.style.width = revW + 'px';
-          revealed.style.height = revH + 'px';
-          revealed.style.left = (dispLeft + revLeftInside) + 'px';
-          revealed.style.top  = (dispTop + revTopInside) + 'px';
-        }
-
-
-
-
-
-        // ---------- arrow positioning ----------
-        // We want the bottom of the arrow to sit just above the top edge of the door.
-        // Put the arrow inside the overlay, set its width relative to the door,
-        // then compute its height and place it with a negative top so its bottom clears the door.
-        const arrow = el.querySelector('.overlay-arrow');
-        if (arrow) {
-          // width of arrow as fraction of door width
-          const arrowWidthFactor = 0.45; // smaller than before to avoid overlap; tweak if needed
-          arrow.style.position = 'absolute';
-          arrow.style.width = Math.round(dispW * arrowWidthFactor) + 'px';
-          arrow.style.height = 'auto';
-          arrow.style.left = '50%';
-          arrow.style.transform = 'translateX(-50%)';
-          // force layout to get actual pixel height
-          arrow.getBoundingClientRect();
-          const arrowPixelH = arrow.offsetHeight || Math.round(dispW * arrowWidthFactor * 0.6); // fallback estimate
-
-          const gapPx = Math.round(8 * scale); // margin between arrow bottom and door top (adjustable)
-          // place arrow so its bottom is at (overlay top - gapPx) -> top = -arrowPixelH - gapPx
-          const arrowTopInside = - arrowPixelH - gapPx;
-          arrow.style.top = arrowTopInside + 'px';
-        }
-      });
-
-
-      // drone center between doors and vertically centered relative to background
-      const leftEl = frame.querySelector('.left-door'); const rightEl = frame.querySelector('.right-door'); const drone = frame.querySelector('.overlay-drone');
-      if(drone && leftEl && rightEl){ const leftW = parseFloat(leftEl.style.width)||0; const leftL = parseFloat(leftEl.style.left)||0; const rightW = parseFloat(rightEl.style.width)||0; const rightL = parseFloat(rightEl.style.left)||0; const leftCenter = leftL + leftW/2; const rightCenter = rightL + rightW/2; const droneDispW = Math.round((drone.naturalWidth||160)*scale); const droneDispH = Math.round((drone.naturalHeight||100)*scale); drone.style.width = droneDispW + 'px'; drone.style.height = droneDispH + 'px'; drone.style.left = Math.round((leftCenter + rightCenter)/2) + 'px'; drone.style.top = Math.round((frameHeight - droneDispH)/2) + 'px'; drone.style.transform = 'translateX(-50%)'; }
-    }
-
-    // attach positioning + resize handler
-    function attach_positioning(display_element){ position_scene_overlays(display_element); let to=null; const handler=()=>{ if(to) clearTimeout(to); to=setTimeout(()=>position_scene_overlays(display_element),80); }; window.addEventListener('resize', handler); return ()=>window.removeEventListener('resize', handler); }
-
-    function setDisplayBg(color){
-      const el = jsPsych.getDisplayElement && jsPsych.getDisplayElement();
-      if (el) { el.style.background = color; el.style.backgroundColor = color; }
-    }
-
-    function lockScroll(){
-      document.documentElement.style.overflow = 'hidden';
-      document.body.style.overflow = 'hidden';
-    }
-    function unlockScroll(){
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-    }
-
-    // ---- CONFIG (can be overridden via URL params) ----
-    const CONFIG = {
-      N: 20,                     // total number of door trials
-      drone_success_rate: 0.75,  // P(suggestion is correct | true_location)
-      sequence: null,             // optional: [{true_location:'left', suggestion:'right'}, ...]
-      seed: null                 // <-- NEW: optional RNG seed (integer)
-    };
-
-    // Optional URL overrides: ?N=30&p=0.6&seq=LR,RL,LL,RR  (L/R = victim/suggestion)
     function parseSequenceParam() {
       const p = new URLSearchParams(location.search).get('seq');
       if (!p) return null;
@@ -531,39 +578,16 @@
     function readConfigFromURL() {
       const sp = new URLSearchParams(location.search);
       const N = parseInt(sp.get('N'), 10);
-      const p = parseFloat(sp.get('p')); // success prob
+      const p = parseFloat(sp.get('p'));
       if (!isNaN(N) && N > 0) CONFIG.N = N;
       if (!isNaN(p) && p >= 0 && p <= 1) CONFIG.drone_success_rate = p;
-      
-      // NEW: seed param support (?seed=1234)
       const seed = parseInt(sp.get('seed'), 10);
       if (!isNaN(seed)) CONFIG.seed = seed;
-      
       const seq = parseSequenceParam();
       if (seq && seq.length > 0) CONFIG.sequence = seq;
     }
-
-    // Random generator obeying success rate
-    function generateRandomTrials(N, successRate) {
-      const out = [];
-      for (let i = 0; i < N; i++) {
-        const true_location = RAND() < 0.5 ? 'left' : 'right';
-        const correct = RAND() < successRate;
-        const suggestion = correct ? true_location : (true_location === 'left' ? 'right' : 'left');
-        out.push({ true_location, suggestion });
-      }
-      return out;
-    }
-
-    // Load URL overrides (if any)
     readConfigFromURL();
 
-    jsPsych.data.addProperties({
-      participant_id: pid,
-      seed: CONFIG.seed
-    });
-
-    // --- Seedable RNG setup ---
     function mulberry32(a){
       a |= 0;
       return function(){
@@ -576,24 +600,189 @@
 
     let RAND = Math.random;
     if (CONFIG.seed !== null) RAND = mulberry32(CONFIG.seed);
-    
+
     jsPsych.data.addProperties({
+      participant_id: pid,
+      seed: CONFIG.seed,
       config_N: CONFIG.N,
       config_drone_success_rate: CONFIG.drone_success_rate,
       config_sequence_len: CONFIG.sequence ? CONFIG.sequence.length : 0
     });
 
+    // ---- Victim skins + no-repeat picker ----
+    const VICTIMS = await loadVictimSkins();
+    function shuffleInPlace(arr, randFn) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(randFn() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+    function makeSkinPicker(victimList, randFn) {
+      let pool = [];
+      const refill = () => { pool = shuffleInPlace(victimList.slice(), randFn); };
+      refill();
+      return function nextSkin() {
+        if (pool.length === 0) refill();
+        return pool.pop();
+      };
+    }
+    const pickVictimSkin = makeSkinPicker(VICTIMS, RAND);
 
-    // ---- TRIAL VARIABLES ----
+    // ---- Preload ----
+    jsPsych.pluginAPI.preloadImages([
+      'assets/background.png','assets/drone.png','assets/door.png',
+      'assets/empty.png','assets/left_arrow.png','assets/right_arrow.png',
+      ...VICTIMS
+    ]);
+
+    // ---- Fullscreen helper trial if needed (desktop only) ----
+    const needFullscreenTrial =
+      !IS_MOBILE &&
+      !document.fullscreenElement &&
+      !(document.webkitFullscreenElement) &&
+      !(document.msFullscreenElement);
+
+    if (needFullscreenTrial) {
+      const enter_fullscreen = {
+        type: jsPsychFullscreen,
+        fullscreen_mode: true,
+        message: '<p>For the best experience, we will switch to full screen.</p>',
+        button_label: 'Enter full screen'
+      };
+      timeline.push(enter_fullscreen);
+    }
+
+    // ---- Intro trials ----
+    const slider_trial = {
+      type: jsPsychHtmlSliderResponse,
+      stimulus: '<h2 style="margin-bottom:14px;text-align:center;">How much do you generally trust robots?</h2>',
+      labels: [
+        '<div class="two-line-label">0<br>(never)</div>',
+        '<div class="two-line-label">100<br>(always)</div>'
+      ],
+      min: 0, max: 100, start: 50, slider_width: 700, require_movement: true, button_label: 'Next',
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center';
+        el.style.alignItems = 'center';
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
+        const slider = el.querySelector('input[type="range"]');
+        if (slider) {
+          const valueDisplay = document.createElement('div');
+          valueDisplay.id = 'slider-value-display';
+          valueDisplay.style.margin = '6px 0 10px';
+          valueDisplay.style.fontWeight = '600';
+          valueDisplay.textContent = 'Selected value: ' + slider.value;
+          slider.parentNode.insertBefore(valueDisplay, slider);
+          slider.addEventListener('input', () => { valueDisplay.textContent = 'Selected value: ' + slider.value; });
+        }
+      },
+      data: { trial_type: 'survey_slider' },
+      on_finish: d => {
+        d.slider_value = d.response;
+        logTrialRow(d);
+      }
+    };
+
+    const emergency_trial = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: '<h2 style="margin-bottom:18px;text-align:center;">In an emergency situation, whose judgement do you generally trust more?</h2>',
+      choices: ["My own judgement", "A robot's judgement"],
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center';
+        el.style.alignItems = 'center';
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
+      },
+      data: { trial_type: 'survey_button' },
+      on_finish: d => {
+        d.choice = d.response;
+        logTrialRow(d);
+      }
+    };
+
+    const ready_trial = {
+      type: jsPsychHtmlButtonResponse,
+      stimulus: '<h2 style="margin-bottom:8px;text-align:center;">You are ready to proceed.</h2><p style="margin:0;text-align:center;">Press Continue to start the main task.</p>',
+      choices: ['Continue'],
+      on_load: function () {
+        const el = jsPsych.getDisplayElement();
+        el.style.display = 'flex';
+        el.style.flexDirection = 'column';
+        el.style.justifyContent = 'center';
+        el.style.alignItems = 'center';
+        el.style.minHeight = '100vh';
+        el.style.textAlign = 'center';
+      },
+      on_finish: function () {
+        // Start forcing black between feedback -> door trials only from now on
+        document.body.classList.add('task-dark');
+      }
+    };
+
+    timeline.push(slider_trial, emergency_trial, ready_trial);
+
+    // ---- Trial generation (uses RAND) ----
+    function generateRandomTrials(N, successRate) {
+      const out = [];
+      for (let i = 0; i < N; i++) {
+        const true_location = RAND() < 0.5 ? 'left' : 'right';
+        const correct = RAND() < successRate;
+        const suggestion = correct ? true_location : (true_location === 'left' ? 'right' : 'left');
+        out.push({ true_location, suggestion });
+      }
+      return out;
+    }
+
     let trials;
     if (CONFIG.sequence && CONFIG.sequence.length > 0) {
-      trials = CONFIG.sequence.slice(0, CONFIG.N); // truncate if needed
+      trials = CONFIG.sequence.slice(0, CONFIG.N);
     } else {
       trials = generateRandomTrials(CONFIG.N, CONFIG.drone_success_rate);
     }
-    // If you want: trials = jsPsych.randomization.shuffle(trials);
 
+    // Attach a no-repeat victim skin to each trial
+    trials = trials.map(t => ({ ...t, victim_src: pickVictimSkin() }));
 
+    // ---- Layout + scene HTML ----
+    const layout = { leftDoorX: 479, leftDoorY: 248, rightDoorX: 1132, rightDoorY: 248, arrowOffsetY: -80 };
+
+    function build_scene_html({
+      suggestion = 'none',
+      true_location = null,
+      trial_num = 1,
+      trial_total = 1
+    }) {
+      const leftArrowHtml  = suggestion === 'left' ? `<img src="assets/left_arrow.png" class="overlay-arrow" data-side="left">` : '';
+      const rightArrowHtml = suggestion === 'right' ? `<img src="assets/right_arrow.png" class="overlay-arrow" data-side="right">` : '';
+      const droneHtml      = `<img src="assets/drone.png" class="overlay-drone">`;
+
+      return `
+        <div class="scene-root" style="opacity:0" data-true="${true_location}">
+          <div class="scene-frame">
+            <div class="trial-counter">${trial_num}/${trial_total}</div>
+            <img src="assets/background.png" class="background">
+            <img src="assets/empty.png" class="revealed-image left-revealed" data-side="left">
+            <img src="assets/empty.png" class="revealed-image right-revealed" data-side="right">
+            <div class="overlay left-door" data-orig-x="${layout.leftDoorX}" data-orig-y="${layout.leftDoorY}">
+              ${leftArrowHtml}
+              <img src="assets/door.png" class="door-image">
+            </div>
+            <div class="overlay right-door" data-orig-x="${layout.rightDoorX}" data-orig-y="${layout.rightDoorY}">
+              ${rightArrowHtml}
+              <img src="assets/door.png" class="door-image">
+            </div>
+            ${droneHtml}
+          </div>
+        </div>`;
+    }
 
     function make_feedback_trial() {
       return {
@@ -607,7 +796,7 @@
           const fg = ok ? '#2dd36f' : '#ff5c67';
           return `
             <div style="
-              width:100vw; height:100vh;
+              width:100vw; height:100vh; height:100svh;
               display:flex; align-items:center; justify-content:center;
               background:${bg}; color:${fg};
             ">
@@ -617,20 +806,17 @@
             </div>`;
         },
         on_load: function(){
-          setDisplayBg('#000'); // you already added this earlier
-          lockScroll();         // keep scroll locked for this short screen too
+          setDisplayBg('#000');
+          lockScroll();
           window._lastOutcome = window._lastOutcome || null;
         }
       };
     }
 
-
-
     function make_door_trial(t, idx, total){
       return {
         type: jsPsychHtmlKeyboardResponse,
         stimulus: function(){ 
-          // Start hidden to avoid a raw-frame flash; we’ll reveal after layout.
           let html = build_scene_html({
             suggestion: t.suggestion,
             true_location: t.true_location,
@@ -644,123 +830,191 @@
         trial_duration: 15000,
         data: { ...t, trial_index: idx, trial_total: total },
         on_load: function(){
-          lockScroll(); // prevent scrollbars flicker during door scene
-          setDisplayBg('#000'); // keep background black while the scene prepares
+          lockScroll();
+          setDisplayBg('#000');
           const frame = jsPsych.getDisplayElement();
           const rootEl = frame.querySelector('.scene-root');
 
-          // First layout pass (positions/scales everything), then reveal shortly after.
           position_scene_overlays(frame).then(()=>{
             const cleanup = attach_positioning(frame);
 
-            // read params
             const true_location = rootEl ? rootEl.getAttribute('data-true') : null;
 
-            // set image src
             const leftRevealed  = frame.querySelector('.left-revealed');
             const rightRevealed = frame.querySelector('.right-revealed');
-            if(leftRevealed)  leftRevealed.src  = (true_location === 'left')  ? 'assets/victim.png' : 'assets/empty.png';
-            if(rightRevealed) rightRevealed.src = (true_location === 'right') ? 'assets/victim.png' : 'assets/empty.png';
-            if(leftRevealed)  leftRevealed.style.visibility  = 'hidden';
-            if(rightRevealed) rightRevealed.style.visibility = 'hidden';
+            const skin = t.victim_src;
+            if (leftRevealed)  leftRevealed.src  = (true_location === 'left')  ? skin : 'assets/empty.png';
+            if (rightRevealed) rightRevealed.src = (true_location === 'right') ? skin : 'assets/empty.png';
+            if (leftRevealed)  leftRevealed.style.visibility  = 'hidden';
+            if (rightRevealed) rightRevealed.style.visibility = 'hidden';
 
-            // show arrows after buffer
             const arrowBufferMs = 700;
             setTimeout(()=>{
               const arrows = frame.querySelectorAll('.overlay-arrow');
               arrows.forEach(a=>a.classList.add('show'));
             }, arrowBufferMs);
 
-            // reveal scene after layout
             requestAnimationFrame(()=>{ rootEl.style.opacity = '1'; });
 
-            // key handling (same as before)
             const trialStart = performance.now();
             let responded = false;
-            function onKey(e){
-              if(responded) return;
-              if(e.code === 'ArrowLeft' || e.code === 'ArrowRight'){
-                responded = true;
-                const choice = e.code === 'ArrowLeft' ? 'left' : 'right';
-                const chosenOverlay = frame.querySelector(`.${choice}-door`);
-                const chosenDoorImg = chosenOverlay.querySelector('.door-image');
 
-                const revealed = frame.querySelector('.' + choice + '-revealed');
-                if(revealed) revealed.style.visibility = 'visible';
+            const choose = (side) => {
+              if (window.__DISCARD_DATA__) return;
+              if (responded) return;
+              responded = true;
 
-                // measure RT at the moment of choice
-                const rt = (performance.now() - trialStart) / 1000;
+              const choice = side; // 'left' | 'right'
+              const chosenOverlay = frame.querySelector(`.${choice}-door`);
+              const chosenDoorImg = chosenOverlay.querySelector('.door-image');
 
-                // how long to keep the revealed image visible AFTER the door is fully open
-                const revealHoldMs = 1000; // <-- change this value to taste (ms)
+              const revealed = frame.querySelector('.' + choice + '-revealed');
+              if(revealed) revealed.style.visibility = 'visible';
 
-                // helper: parse "0.55s, 0s" or "550ms" lists into milliseconds (take the max)
-                function msFromTimeList(str) {
-                  if (!str) return 0;
-                  return str
-                    .split(',')
-                    .map(s => s.trim())
-                    .map(v => v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000)
-                    .reduce((a, b) => Math.max(a, b), 0);
-                }
+              const rt = (performance.now() - trialStart) / 1000;
 
-                let finished = false;
-                const afterOpen = () => {
-                  if (finished) return;
-                  finished = true;
-                  // hold on the revealed state, then finish (feedback shows next)
-                  setTimeout(() => {
-                    const correct = (choice === true_location);
-                    window._lastOutcome = { correct, rt, choice, true_location };
-                    jsPsych.finishTrial({ choice, reaction_time_s: rt, correct });
-                    if (cleanup) cleanup();
-                  }, revealHoldMs);
-                };
-
-                // attach transitionend listeners BEFORE triggering the animation
-                function onEnd(e) {
-                  if (e.propertyName === 'transform') afterOpen();
-                }
-                chosenDoorImg.addEventListener('transitionend', onEnd, { once: true });
-                chosenDoorImg.addEventListener('webkitTransitionEnd', onEnd, { once: true }); // Safari legacy
-
-                // now trigger the door animation
-                chosenDoorImg.getBoundingClientRect(); // force layout
-                chosenDoorImg.classList.add('door-open');
-
-                // fallback if transitionend doesn’t fire
-                const styles  = getComputedStyle(chosenDoorImg);
-                const durMs   = msFromTimeList(styles.transitionDuration);
-                const delayMs = msFromTimeList(styles.transitionDelay);
-                const totalMs = durMs + delayMs;
-                setTimeout(afterOpen, (totalMs > 0 ? totalMs + 40 : 650));
-
+              function msFromTimeList(str) {
+                if (!str) return 0;
+                return str.split(',').map(s => s.trim())
+                  .map(v => v.endsWith('ms') ? parseFloat(v) : parseFloat(v) * 1000)
+                  .reduce((a, b) => Math.max(a, b), 0);
               }
+
+              let finished = false;
+              const afterOpen = () => {
+                if (finished) return;
+                finished = true;
+                setTimeout(() => {
+                  const correct = (choice === true_location);
+                  window._lastOutcome = { correct, rt, choice, true_location };
+                  jsPsych.finishTrial({ choice, reaction_time_s: rt, correct });
+                  if (cleanup) cleanup();
+                  if (IS_MOBILE) document.getElementById('mobile-choices').style.display = 'none';
+                }, 1000);
+              };
+
+              function onEnd(e) { if (e.propertyName === 'transform') afterOpen(); }
+              chosenDoorImg.addEventListener('transitionend', onEnd, { once: true });
+              chosenDoorImg.addEventListener('webkitTransitionEnd', onEnd, { once: true });
+
+              chosenDoorImg.getBoundingClientRect();
+              chosenDoorImg.classList.add('door-open');
+
+              const styles  = getComputedStyle(chosenDoorImg);
+              const durMs   = msFromTimeList(styles.transitionDuration);
+              const delayMs = msFromTimeList(styles.transitionDelay);
+              const totalMs = durMs + delayMs;
+              setTimeout(afterOpen, (totalMs > 0 ? totalMs + 40 : 650));
+            };
+
+            // key input (desktop)
+            function onKey(e){
+              if (responded) return;
+              if (e.code === 'ArrowLeft')  return choose('left');
+              if (e.code === 'ArrowRight') return choose('right');
             }
             window.addEventListener('keydown', onKey);
-            // preserve any existing on_finish and extend it
+
+            // touch/click input (doors)
+            const leftDoor  = frame.querySelector('.left-door');
+            const rightDoor = frame.querySelector('.right-door');
+            const onLeft  = () => choose('left');
+            const onRight = () => choose('right');
+            leftDoor?.addEventListener('click', onLeft, { passive: true });
+            rightDoor?.addEventListener('click', onRight, { passive: true });
+
+            // mobile choice bar
+            if (IS_MOBILE) {
+              const bar = document.getElementById('mobile-choices');
+              bar.style.display = 'block';
+              document.getElementById('mob-left').onclick  = onLeft;
+              document.getElementById('mob-right').onclick = onRight;
+            }
+
             const prevFinish = this.on_finish;
             this.on_finish = function(data){
-              // call previous cleanup (remove listener)
               if (prevFinish) prevFinish.call(this, data);
               window.removeEventListener('keydown', onKey);
-
-              // incremental logging for this door trial
-              // (data includes choice, correct, reaction_time_s we passed to finishTrial)
-              logTrialRow(data);
+              leftDoor?.removeEventListener('click', onLeft);
+              rightDoor?.removeEventListener('click', onRight);
+              if (IS_MOBILE) document.getElementById('mobile-choices').style.display = 'none';
+              if (!window.__DISCARD_DATA__) {
+                logTrialRow(data);
+              }
             };
           });
+
           const el = jsPsych.getDisplayElement();
           if (el && typeof el.focus === 'function') el.focus();
         }
       };
     }
 
-    // Build interleaved sequence: door -> feedback -> door -> feedback ...
+    // ---- Build sequence and run ----
     trials.forEach((t, idx) => {
       timeline.push(make_door_trial(t, idx, trials.length));
       timeline.push(make_feedback_trial());
     });
+
+    // Exit UI handlers
+    const exitBtn = document.getElementById('exit-btn');
+    const exitModal = document.getElementById('exit-modal');
+    const btnResume = document.getElementById('exit-resume');
+    const btnKeep   = document.getElementById('exit-keep');
+    const btnDiscard= document.getElementById('exit-discard');
+
+    exitBtn.onclick = () => showExitModal(jsPsych);
+    window.addEventListener('keydown', (e) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === 'X' || e.key === 'x')) {
+        if (exitModal.style.display !== 'flex') showExitModal(jsPsych);
+      }
+    });
+
+    // Resume
+    btnResume.onclick = () => hideExitModal(jsPsych);
+
+    // Exit & keep data
+    btnKeep.onclick = () => {
+      window.__END_REASON__ = 'keep';
+      window.__MANUAL_END__ = true;
+      exitModal.style.display = 'none';
+
+      try { if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } } catch(_){}
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.classList.remove('task-dark');
+      showEndScreenKeep();
+
+      try { jsPsych.pluginAPI.cancelAllKeyboardResponses?.(); } catch(_){}
+      try { jsPsych.pluginAPI.clearAllTimeouts?.(); } catch(_){}
+      try {
+        const rows = buildRowsForLogging(jsPsych.data.get().values());
+        logAsync(rows).catch(()=>{});
+      } catch(_){}
+      try { jsPsych.endExperiment('Ended early (keep data).'); } catch(_) {}
+    };
+
+    // Exit & discard data
+    btnDiscard.onclick = async () => {
+      window.__DISCARD_DATA__ = true;
+      window.__END_REASON__ = 'discard';
+      window.__MANUAL_END__ = true;
+      exitModal.style.display = 'none';
+
+      try { jsPsych.data.reset(); } catch(_){}
+      try { await requestDeleteByParticipant(window.PID); } catch(_){}
+
+      try { if (document.fullscreenElement && document.exitFullscreen) { document.exitFullscreen().catch(()=>{}); } } catch(_){}
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      document.body.classList.remove('task-dark');
+      showEndScreenDiscard();
+
+      try { jsPsych.pluginAPI.cancelAllKeyboardResponses?.(); } catch(_){}
+      try { jsPsych.pluginAPI.clearAllTimeouts?.(); } catch(_){}
+      try { jsPsych.endExperiment('Withdrawn (discard data).'); } catch(_) {}
+    };
+
     jsPsych.run(timeline);
   }
   </script>
