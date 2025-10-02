@@ -3,7 +3,11 @@
   <head>
     <meta charset="utf-8" />
     <title>Trust Doors — Web Version (Reworked)</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <!-- Optional: if you later ship a manifest and want standalone on iOS home screen -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
 
     <!-- Local jsPsych files (adjust paths if your vendor folder differs) -->
     <script src="jspsych/jspsych.js"></script>
@@ -66,7 +70,7 @@
 
       /* Exit button */
       #exit-btn {
-        position: fixed; top: 12px; right: 12px; z-index: 10000;
+        position: fixed; top: 12px; right: 12px; z-index: 10010;
         padding: 8px 12px; border-radius: 8px; border: none; cursor: pointer;
         background: #333; color: #fff; font-weight: 600; opacity: 0.85;
       }
@@ -98,6 +102,18 @@
       body.task-dark .jspsych-content-wrapper {
         background: #000 !important;
       }
+      /* Reduce iOS scroll/zoom quirks */
+      * { -webkit-tap-highlight-color: transparent; }
+      html, body { overscroll-behavior: none; touch-action: manipulation; }
+
+      /* Make the root scene fill the safe viewport cleanly */
+      .scene-root { width:100vw; height:100svh; }
+
+      /* Small tweak so the mobile choice bar doesn't overlap higher z-index content */
+      #mobile-choices { backdrop-filter: blur(6px); background: rgba(0,0,0,.35); }
+      #mob-left, #mob-right { background:#fff; }
+
+
     </style>
   </head>
 
@@ -115,6 +131,22 @@
       </div>
     </div>
   </div>
+
+  <!-- Mobile rotate/size gate -->
+  <div id="rotate-gate" style="display:none; position:fixed; inset:0; background:#0b0b10; color:#fff; z-index:10002;
+    align-items:center; justify-content:center; padding:24px; box-sizing:border-box;">
+    <div style="max-width:720px; text-align:center;">
+      <h2 style="margin:0 0 12px 0; font-size:24px;">Please rotate your device</h2>
+      <p style="opacity:.9; margin:0 0 14px 0;">
+        This task works best in <strong>landscape</strong> with enough screen width. Rotate your phone and make sure the address bar is minimized.
+      </p>
+      <p id="gate-tip" style="opacity:.8; font-size:14px; margin:0 0 18px 0;"></p>
+      <button id="gate-check" style="padding:10px 16px; border:none; border-radius:10px; background:#2b6fbf; color:#fff; font-weight:700;">
+        I’m ready
+      </button>
+    </div>
+  </div>
+
 
   <!-- jsPsych target (hidden until consent) -->
   <div id="jspsych-target" style="display:none;"></div>
@@ -196,9 +228,20 @@
   // small helper: generate a random participant id
   function randomId(len=8){ return Math.random().toString(36).slice(2, 2+len); }
 
-  // Mobile-ish detection (UA or coarse pointer + narrow width)
-  const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
-    || (matchMedia('(pointer:coarse)').matches && screen.width < 1024);
+  // Conservative mobile/tablet detection:
+  // - True for phones/tablets (including iPadOS w/ desktop UA)
+  // - False for desktop/touch laptops unless viewport is truly small
+  const IS_MOBILE = (() => {
+    const ua = navigator.userAgent || '';
+    const hasTouch = (navigator.maxTouchPoints || 0) > 1;
+    const uaPhone  = /Android|iPhone|iPod|Mobile/i.test(ua);
+    const uaTablet = /iPad|Tablet/i.test(ua);
+    // iPadOS reports "Macintosh" + touch points
+    const isIPadOS = /\bMacintosh\b/.test(ua) && hasTouch;
+    // Only treat generic touch devices as "mobile" if the physical screen is small
+    const smallScreen = Math.min(screen.width, screen.height) <= 820; // CSS px
+    return uaPhone || uaTablet || isIPadOS || (hasTouch && smallScreen);
+  })();
 
   // ====== CENTRAL LOGGING CONFIG ======
   const LOG_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwtP8jaBQYYqcGgFE1b9uhxXBlxqMMp0WGccFjbart7Z0LorjZI7FUVKdY2umIV_WjO/exec';
@@ -316,7 +359,7 @@
       jsTarget.style.width = '100%';
       jsTarget.style.height = '100%';
 
-      // Try to enter fullscreen (desktop only)
+      // Desktop: try to enter fullscreen. Mobile: skip (Safari won't allow).
       if (!IS_MOBILE) {
         try {
           const el = document.documentElement;
@@ -334,11 +377,66 @@
         }
       }
 
+      // Mobile: wait until user is in landscape and viewport is wide enough
+      if (IS_MOBILE) await waitForMobileGate();
+
+      // Start jsPsych
       await startJsPsych();
     });
+
   })();
 
   /* ---------- shared scene helpers (GLOBAL) ---------- */
+
+  // Landscape/size gate (mobile only)
+  const MIN_LANDSCAPE_WIDTH = 640;
+
+  function isLandscape() {
+    return (window.matchMedia && window.matchMedia('(orientation: landscape)').matches)
+      || (window.innerWidth > window.innerHeight);
+  }
+  function hasEnoughWidth() {
+    return window.innerWidth >= MIN_LANDSCAPE_WIDTH;
+  }
+  function mobileGateSatisfied() {
+    return isLandscape() && hasEnoughWidth();
+  }
+
+  async function waitForMobileGate() {
+    // Do nothing on desktop
+    if (!IS_MOBILE) return;
+
+    // Already good? carry on
+    if (mobileGateSatisfied()) return;
+
+    const gate = document.getElementById('rotate-gate');
+    const tip  = document.getElementById('gate-tip');
+    const btn  = document.getElementById('gate-check');
+
+    function updateTip() {
+      tip.textContent = `Current view: ${window.innerWidth}×${window.innerHeight}px. Rotate to landscape and ensure ≥ ${MIN_LANDSCAPE_WIDTH}px width.`;
+    }
+
+    gate.style.display = 'flex';
+    updateTip();
+
+    return new Promise((resolve) => {
+      const check = () => {
+        updateTip();
+        if (mobileGateSatisfied()) {
+          window.removeEventListener('resize', check);
+          window.removeEventListener('orientationchange', check);
+          gate.style.display = 'none';
+          resolve();
+        }
+      };
+      window.addEventListener('resize', check, { passive: true });
+      window.addEventListener('orientationchange', check, { passive: true });
+      btn.addEventListener('click', check, { once: true });
+    });
+  }
+
+
 
   function decodeImage(img){
     if(!img) return Promise.resolve();
@@ -359,13 +457,26 @@
 
     const origBgW = bg.naturalWidth || bg.width;
     const origBgH = bg.naturalHeight || bg.height;
-    const frameWidth  = frame.clientWidth;
-    const scale       = frameWidth / origBgW;
-    const frameHeight = Math.round(origBgH * scale);
 
-    bg.style.width  = frameWidth + 'px';
-    bg.style.height = frameHeight + 'px';
+    // Use the visible container (safe viewport inside your fixed #jspsych-target)
+    const viewportW = display_element.clientWidth || window.innerWidth;
+    const viewportH = display_element.clientHeight || window.innerHeight;
 
+    // ✅ Scale-to-contain: fit the whole background inside the viewport (no cropping, no squish)
+    const scale = Math.min(viewportW / origBgW, viewportH / origBgH);
+
+    const dispBgW = Math.round(origBgW * scale);
+    const dispBgH = Math.round(origBgH * scale);
+
+    // Size the frame to match the displayed background
+    frame.style.width  = dispBgW + 'px';
+    frame.style.height = dispBgH + 'px';
+
+    // Size the background
+    bg.style.width  = dispBgW + 'px';
+    bg.style.height = dispBgH + 'px';
+
+    // ---------- Doors & revealed ----------
     const overlays = frame.querySelectorAll('.overlay');
     overlays.forEach(el=>{
       const origX  = parseFloat(el.getAttribute('data-orig-x'))||0;
@@ -375,17 +486,20 @@
       const doorW = doorImg.naturalWidth  || doorImg.width  || 360;
       const doorH = doorImg.naturalHeight || doorImg.height || Math.round(doorW*1.3);
 
+      // displayed door size after scaling
       const dispW = Math.round(doorW * scale);
       const dispH = Math.round(doorH * scale);
 
       const dispLeft = Math.round(origX * scale);
       const dispTop  = Math.round(origY * scale);
 
+      // position the overlay container
       el.style.left   = dispLeft + 'px';
       el.style.top    = dispTop  + 'px';
       el.style.width  = dispW    + 'px';
       el.style.height = dispH    + 'px';
 
+      // revealed image (victim / empty)
       const revealed = el.classList.contains('left-door')
         ? frame.querySelector('.left-revealed')
         : frame.querySelector('.right-revealed');
@@ -413,6 +527,7 @@
         revealed.style.top    = (dispTop  + revTopInside)  + 'px';
       }
 
+      // arrows
       const arrow = el.querySelector('.overlay-arrow');
       if (arrow) {
         const arrowWidthFactor = 0.45;
@@ -421,6 +536,7 @@
         arrow.style.height   = 'auto';
         arrow.style.left     = '50%';
         arrow.style.transform= 'translateX(-50%)';
+        // force layout to get height
         arrow.getBoundingClientRect();
         const arrowPixelH = arrow.offsetHeight || Math.round(dispW * arrowWidthFactor * 0.6);
         const gapPx = Math.round(8 * scale);
@@ -428,6 +544,7 @@
       }
     });
 
+    // ---------- Drone centered between doors, vertically centered ----------
     const leftEl  = frame.querySelector('.left-door');
     const rightEl = frame.querySelector('.right-door');
     const drone   = frame.querySelector('.overlay-drone');
@@ -439,18 +556,17 @@
       const leftCenter  = leftL  + leftW/2;
       const rightCenter = rightL + rightW/2;
 
-      const scale = (parseFloat(bg.style.width) || frame.clientWidth) / (bg.naturalWidth || bg.width);
-      const droneDispW = Math.round((drone.naturalWidth || 160) * scale);
-      const droneDispH = Math.round((drone.naturalHeight|| 100) * scale);
-      const frameHeight = Math.round((bg.naturalHeight || bg.height) * scale);
+      const droneDispW = Math.round((drone.naturalWidth  || 160) * scale);
+      const droneDispH = Math.round((drone.naturalHeight || 100) * scale);
 
       drone.style.width  = droneDispW + 'px';
       drone.style.height = droneDispH + 'px';
       drone.style.left   = Math.round((leftCenter + rightCenter) / 2) + 'px';
-      drone.style.top    = Math.round((frameHeight - droneDispH) / 2) + 'px';
+      drone.style.top    = Math.round((dispBgH - droneDispH) / 2) + 'px';
       drone.style.transform = 'translateX(-50%)';
     }
   }
+
 
   function attach_positioning(display_element){
     position_scene_overlays(display_element);
