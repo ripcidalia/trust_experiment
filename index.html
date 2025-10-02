@@ -19,12 +19,28 @@
     <link href="jspsych/jspsych.css" rel="stylesheet" type="text/css" />
 
     <style>
-      :root { --bg: #f4f6fb; --card: #ffffff; --accent: #2b6fbf; --muted:#666; }
+      :root { --bg: #f4f6fb; --card: #ffffff; --accent: #2b6fbf; --muted:#666; --safe-top: env(safe-area-inset-top, 0px); --safe-bottom: env(safe-area-inset-bottom, 0px); }
 
-      /* use safe viewport height on mobile to reduce white flashes */
-      html,body { height:100vh; height:100svh; margin:0; font-family:system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial; background:var(--bg); }
-      #jspsych-target { width:100%; height:100vh; height:100svh; }
+      /* Fill the *visible* viewport on mobile and desktop */
+      html, body {
+        margin: 0;
+        font-family: system-ui, Segoe UI, Roboto, "Helvetica Neue", Arial;
+        background: var(--bg);
+        height: 100svh;   /* fallback for older Safari */
+        height: 100dvh;   /* preferred: visible viewport height */
+      }
 
+      /* The jsPsych container pins to the safe top/bottom (prevents cropping under URL bar/notch) */
+      #jspsych-target {
+        position: fixed;
+        left: 0; right: 0;
+        top: var(--safe-top);
+        bottom: var(--safe-bottom);
+        width: 100%;
+        height: auto;     /* height controlled by top/bottom */
+      }
+
+      
       .center-outer { min-height:100vh; min-height:100svh; display:flex; align-items:center; justify-content:center; padding:20px; box-sizing:border-box; }
       .card { background:var(--card); border-radius:10px; box-shadow:0 8px 30px rgba(10,10,20,0.08); padding:28px; width:100%; max-width:900px; }
       h1 { margin:0 0 12px 0; font-size:22px; }
@@ -33,7 +49,20 @@
       .two-line-label { text-align:center; font-size:14px; line-height:1.1; }
 
       /* --- scene styling --- */
-      .scene-root{ display:flex; justify-content:center; align-items:center; width:100vw; height:100vh; height:100svh; margin:0; padding:0; background:#000; overflow:hidden; }
+      /* Scene fills visible viewport, with safe-area padding */
+      .scene-root {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100vw;
+        height: 100svh;
+        height: 100dvh;
+        margin: 0;
+        padding-top: var(--safe-top);
+        padding-bottom: var(--safe-bottom);
+        background: #000;
+        overflow: hidden;
+      }
       .scene-frame { position:relative; width:100vw; max-width:100vw; line-height:0; overflow:visible; }
       .background { width:100%; height:auto; display:block; user-select:none; -webkit-user-drag:none; z-index:0 }
 
@@ -54,7 +83,7 @@
 
       .trial-counter {
         position: absolute;
-        top: 2vh;
+        top: calc(var(--safe-top) + 8px);
         left: 50%;
         transform: translateX(-50%);
         z-index: 6;
@@ -353,14 +382,10 @@
       document.getElementById('consent-screen').style.display = 'none';
       const jsTarget = document.getElementById('jspsych-target');
       jsTarget.style.display = 'block';
-      jsTarget.style.position = 'fixed';
-      jsTarget.style.left = '0';
-      jsTarget.style.top = '0';
-      jsTarget.style.width = '100%';
-      jsTarget.style.height = '100%';
+      setTimeout(() => { try { window.scrollTo(0, 1); } catch (_) {} }, 0);
 
-      // Desktop: try to enter fullscreen. Mobile: skip (Safari won't allow).
-      if (!IS_MOBILE) {
+      // Try fullscreen wherever available (desktop + iOS 16+ Safari may allow it)
+      if (document.documentElement.requestFullscreen) {
         try {
           const el = document.documentElement;
           if (!document.fullscreenElement) {
