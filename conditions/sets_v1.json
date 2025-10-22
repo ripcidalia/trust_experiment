@@ -1,0 +1,2650 @@
+{
+  "SetA": {
+    "blocks": [
+      {
+        "probes": [
+          6,
+          9,
+          14
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          10,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          }
+        ]
+      },
+      {
+        "probes": [
+          7,
+          16,
+          20
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      }
+    ]
+  },
+  "SetB": {
+    "blocks": [
+      {
+        "probes": [
+          3,
+          8,
+          18
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          6,
+          12,
+          17
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          10,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      }
+    ]
+  },
+  "SetC": {
+    "blocks": [
+      {
+        "probes": [
+          7,
+          14,
+          19
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          10,
+          19,
+          20
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          12,
+          17
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      }
+    ]
+  },
+  "SetD": {
+    "blocks": [
+      {
+        "probes": [
+          5,
+          8,
+          16
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          4,
+          12,
+          18
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          }
+        ]
+      },
+      {
+        "probes": [
+          6,
+          11,
+          16
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "extreme"
+          }
+        ]
+      }
+    ]
+  },
+  "SetE": {
+    "blocks": [
+      {
+        "probes": [
+          5,
+          10,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "extreme"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          10,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "extreme"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "extreme"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          11,
+          12,
+          18
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      }
+    ]
+  },
+  "SetF": {
+    "blocks": [
+      {
+        "probes": [
+          6,
+          12,
+          18
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          8,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          4,
+          10,
+          16
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      }
+    ]
+  },
+  "SetG": {
+    "blocks": [
+      {
+        "probes": [
+          3,
+          10,
+          19
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          10,
+          15
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          7,
+          17,
+          20
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      }
+    ]
+  },
+  "SetH": {
+    "blocks": [
+      {
+        "probes": [
+          6,
+          12,
+          18
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "low"
+          }
+        ]
+      },
+      {
+        "probes": [
+          4,
+          10,
+          16
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "low"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          }
+        ]
+      },
+      {
+        "probes": [
+          5,
+          11,
+          17
+        ],
+        "trials": [
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "L",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "R",
+            "suggestion": "R",
+            "risk": "high"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "medium"
+          },
+          {
+            "victim": "L",
+            "suggestion": "L",
+            "risk": "high"
+          }
+        ]
+      }
+    ]
+  }
+}
