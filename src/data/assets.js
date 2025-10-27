@@ -25,44 +25,44 @@ const BG_MANIFEST_URL     = new URL('../../assets/backgrounds/manifest.json', im
 const DOOR_MANIFEST_URL   = new URL('../../assets/doors/manifest.json', import.meta.url);
 
 const SMOKE_MANIFEST = {
-  left:  '../../assets/smoke/left/manifest.json',
-  right: '../../assets/smoke/right/manifest.json'
+  left:  new URL('../../assets/smoke/left/manifest.json', import.meta.url),
+  right: new URL('../../assets/smoke/right/manifest.json', import.meta.url)
 };
 const FIRE_MANIFEST = {
-  left:  '../../assets/fire/left/manifest.json',
-  right: '../../assets/fire/right/manifest.json'
+  left:  new URL('../../assets/fire/left/manifest.json', import.meta.url),
+  right: new URL('../../assets/fire/right/manifest.json', import.meta.url)
 };
 
 /* Fallbacks when manifests are absent or invalid */
 const DEFAULT_VICTIM_SKINS = [
-  '../../assets/victims/victim1.png',
-  '../../assets/victims/victim1_copy.png',
-  '../../assets/victims/victim2.png',
-  '../../assets/victims/victim2_copy.png',
-  '../../assets/victims/victim3.png',
-  '../../assets/victims/victim3_copy.png',
-  '../../assets/victims/victim4.png',
-  '../../assets/victims/victim4_copy.png',
-  '../../assets/victims/victim5.png',
-  '../../assets/victims/victim5_copy.png',
-  '../../assets/victims/victim6.png',
-  '../../assets/victims/victim6_copy.png'
+  new URL('../../assets/victims/victim1.png', import.meta.url),
+  new URL('../../assets/victims/victim1_copy.png', import.meta.url),
+  new URL('../../assets/victims/victim2.png', import.meta.url),
+  new URL('../../assets/victims/victim2_copy.png', import.meta.url),
+  new URL('../../assets/victims/victim3.png', import.meta.url),
+  new URL('../../assets/victims/victim3_copy.png', import.meta.url),
+  new URL('../../assets/victims/victim4.png', import.meta.url),
+  new URL('../../assets/victims/victim4_copy.png', import.meta.url),
+  new URL('../../assets/victims/victim5.png', import.meta.url),
+  new URL('../../assets/victims/victim5_copy.png', import.meta.url),
+  new URL('../../assets/victims/victim6.png', import.meta.url),
+  new URL('../../assets/victims/victim6_copy.png', import.meta.url)
 ];
 const DEFAULT_EMPTY_SKINS = [
-  '../../assets/empty/empty1.png',
-  '../../assets/empty/empty2.png',
-  '../../assets/empty/empty3.png',
-  '../../assets/empty/empty4.png'
+  new URL('../../assets/empty/empty1.png', import.meta.url),
+  new URL('../../assets/empty/empty2.png', import.meta.url),
+  new URL('../../assets/empty/empty3.png', import.meta.url),
+  new URL('../../assets/empty/empty4.png', import.meta.url)
 ];
 const DEFAULT_BACKGROUNDS = [
-  '../../assets/backgrounds/bg1.png',
-  '../../assets/backgrounds/bg2.png',
-  '../../assets/backgrounds/bg3.png'
+  new URL('../../assets/backgrounds/bg1.png', import.meta.url),
+  new URL('../../assets/backgrounds/bg2.png', import.meta.url),
+  new URL('../../assets/backgrounds/bg3.png', import.meta.url)
 ];
 const DEFAULT_DOORS = [
-  '../../assets/doors/door1.png',
-  '../../assets/doors/door2.png',
-  '../../assets/doors/door3.png'
+  new URL('../../assets/doors/door1.png', import.meta.url),
+  new URL('../../assets/doors/door2.png', import.meta.url),
+  new URL('../../assets/doors/door3.png', import.meta.url)
 ];
 
 /**
