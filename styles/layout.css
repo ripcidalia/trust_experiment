@@ -1,0 +1,60 @@
+/* ==========================================================================
+   layout.css
+   Purpose: Defines the overall structural layout for jsPsych experiment screens,
+            ensuring proper safe-area handling on mobile and consistent centering
+            for content such as consent screens and instructional cards.
+   Behavior:
+   - #jspsych-target anchors between safe top/bottom bounds.
+   - .center-outer vertically centers inner content on all devices.
+   - .card provides a standard panel style for textual sections.
+   - #consent-button defines the main action button styling.
+   ========================================================================== */
+
+/* ===== 1) jsPsych container =====
+   Anchored between top and bottom safe zones to avoid overlap
+   with notches, toolbars, or URL bars on mobile browsers. */
+#jspsych-target {
+  position: fixed;
+  left: 0;
+  right: 0;
+  top: var(--safe-top);
+  bottom: var(--safe-bottom);
+  width: 100%;
+  height: auto; /* height defined by top/bottom anchors */
+}
+
+/* ===== 2) Centered layout helper =====
+   Used for pre-task screens such as consent or overview sections. */
+.center-outer {
+  min-height: 100vh;
+  min-height: 100svh; /* accounts for dynamic viewport height (mobile) */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* ===== 3) Card component =====
+   Reusable panel with soft shadows and rounded corners. */
+.card {
+  background: var(--card);
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(10, 10, 20, 0.08);
+  padding: 28px;
+  width: 100%;
+  max-width: 900px;
+}
+
+/* ===== 4) Consent button =====
+   Primary button used on the consent screen. */
+#consent-button {
+  margin-top: 18px;
+  padding: 12px 20px;
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}

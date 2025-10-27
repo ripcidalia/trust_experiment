@@ -1,0 +1,21 @@
+<!-- ==========================================================================
+     loading-overlay.html
+     Purpose: Fullscreen overlay displayed while the experiment is initializing,
+              preloading assets, or building the jsPsych timeline.
+     Behavior:
+     - Temporarily shown by JavaScript before the first trial starts.
+     - Hides automatically when the experiment is ready to run.
+     Accessibility:
+     - Uses `aria-live="polite"` and `aria-busy="true"` to inform assistive
+       technologies that content is still loading.
+     Styling:
+     - Centered flex layout with a spinner and status text.
+     - Visibility and opacity transitions are handled in CSS (`loading-overlay.css`).
+     ========================================================================== -->
+
+<div id="loadingOverlay" aria-live="polite" aria-busy="true" style="display:none;">
+  <div class="loading-shell">
+    <div class="loading-spinner" aria-hidden="true"></div>
+    <div class="loading-text">Loading experiment…</div>
+  </div>
+</div>

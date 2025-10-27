@@ -1,0 +1,44 @@
+<!-- ==========================================================================
+     mobile-choices.html
+     Purpose: Provides accessible, touch-friendly choice buttons for participants
+              using mobile devices during door trials.
+     Behavior:
+     - Hidden by default and revealed only on mobile during decision phases.
+     - Mirrors the same choices shown on desktop (Left / Right).
+     Accessibility:
+     - Buttons have clear directional labels and large tap targets.
+     Styling:
+     - Fixed at the bottom of the screen with backdrop blur and semi-transparent
+       background (see `mobile.css`).
+     - Layout uses flexbox for even button distribution.
+     ========================================================================== -->
+
+<div
+  id="mobile-choices"
+  style="
+    display: none;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    padding: 12px;
+    box-sizing: border-box;
+    gap: 12px;
+  "
+>
+  <div style="display: flex; gap: 12px;">
+    <button
+      id="mob-left"
+      style="flex: 1; padding: 14px; font-size: 18px; border: none; border-radius: 10px;"
+    >
+      ⬅︎ Left
+    </button>
+    <button
+      id="mob-right"
+      style="flex: 1; padding: 14px; font-size: 18px; border: none; border-radius: 10px;"
+    >
+      Right ➡︎
+    </button>
+  </div>
+</div>

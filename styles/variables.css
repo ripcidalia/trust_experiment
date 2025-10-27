@@ -1,0 +1,38 @@
+/* ==========================================================================
+   variables.css
+   Purpose: Centralized definition of reusable CSS variables (colors,
+            layout metrics, and animatable custom properties).
+   Notes:
+   - Keeps a consistent theme and spacing system across UI components.
+   - Includes custom @property rules for smooth animation of CSS variables.
+   ========================================================================== */
+
+/* ===== 1) Global theme & layout variables ===================================
+   Define core colors, layout constants, and safe-area insets for mobile.
+   -------------------------------------------------------------------------- */
+:root {
+  --bg: #f4f6fb;                    /* Default page background color */
+  --card: #ffffff;                  /* Card or panel background */
+  --accent: #2b6fbf;                /* Primary accent color (buttons, highlights) */
+  --muted: #666;                    /* Subtle text color for descriptions */
+  --safe-top: env(safe-area-inset-top, 0px);        /* Prevent overlap with notches */
+  --safe-bottom: env(safe-area-inset-bottom, 0px);  /* Prevent overlap with nav bars */
+}
+
+/* ===== 2) Custom animatable properties ======================================
+   Enable smooth transitions for logical variables controlled by JS.
+   -------------------------------------------------------------------------- */
+
+/* Vertical hover offset for drones (used in drone hover animation). */
+@property --hoverY {
+  syntax: '<length>';
+  inherits: false;
+  initial-value: 0px;
+}
+
+/* FX animation progress scalar (0→1) for fire/smoke transforms. */
+@property --fx-p {
+  syntax: '<number>';
+  inherits: false;
+  initial-value: 0;
+}
