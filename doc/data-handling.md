@@ -456,6 +456,3 @@ curl -i -X POST https://your-domain.edu/api/log \
 - Data steward: *Your IT contact*  
 - Security incident: *Security@your-university.edu*
 
----
-
-If you want, I can tailor this file to a specific target (e.g., TU Delft-managed VM with Postgres, or Cloudflare Worker + KV) and produce the matching server code as a ready-to-deploy repo skeleton.
