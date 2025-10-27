@@ -19,10 +19,10 @@
 import { CONFIG } from '../config.js';
 
 /* Manifest locations (JSON arrays of filenames or paths) */
-const VICTIM_MANIFEST_URL = '../../assets/victims/manifest.json';
-const EMPTY_MANIFEST_URL = '../../assets/empty/manifest.json';
-const BG_MANIFEST_URL     = '../../assets/backgrounds/manifest.json';
-const DOOR_MANIFEST_URL   = '../../assets/doors/manifest.json';
+const VICTIM_MANIFEST_URL = new URL('../../assets/victims/manifest.json', import.meta.url);
+const EMPTY_MANIFEST_URL = new URL('../../assets/empty/manifest.json', import.meta.url);
+const BG_MANIFEST_URL     = new URL('../../assets/backgrounds/manifest.json', import.meta.url);
+const DOOR_MANIFEST_URL   = new URL('../../assets/doors/manifest.json', import.meta.url);
 
 const SMOKE_MANIFEST = {
   left:  '../../assets/smoke/left/manifest.json',
