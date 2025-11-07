@@ -135,7 +135,7 @@ export const CONFIG = {
       smoke_speed_h: 0.90,
       smoke_speed_v: 0.90,
       timeout_scale: 1.00,
-      shake_amp_px: 0,
+      shake_amp_px: 0.5,
       shake_period_ms: 900,
       risk_value: 0.2
     },
@@ -148,7 +148,7 @@ export const CONFIG = {
       smoke_speed_h: 1.00,
       smoke_speed_v: 1.00,
       timeout_scale: 0.95,
-      shake_amp_px: 1.0,
+      shake_amp_px: 1.7,
       shake_period_ms: 800,
       risk_value: 0.5
     },
@@ -161,7 +161,7 @@ export const CONFIG = {
       smoke_speed_h: 1.30,
       smoke_speed_v: 1.35,
       timeout_scale: 0.90,
-      shake_amp_px: 2.2,
+      shake_amp_px: 3,
       shake_period_ms: 700,
       risk_value: 0.8
     },
@@ -174,7 +174,7 @@ export const CONFIG = {
       smoke_speed_h: 1.60,
       smoke_speed_v: 1.65,
       timeout_scale: 0.85,
-      shake_amp_px: 3.5,
+      shake_amp_px: 4.5,
       shake_period_ms: 600,
       risk_value: 1.0
     }
