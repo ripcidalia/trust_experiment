@@ -224,7 +224,20 @@ export function buildRowsForLogging(allTrials) {
         return d.emergency_preference ?? (d.response === 0 ? 'self' : d.response === 1 ? 'robot' : null);
       }
       if (et === 'questionnaire40pre' || et === 'questionnaire40post') {
-        return d.trust40_total_percent ?? d.trust40_total_score ?? null;
+        // Primary 40-item score
+        const x40 = (typeof d.trust40_total_percent === 'number')
+          ? Number(d.trust40_total_percent.toFixed(1))
+          : (typeof d.trust40_total_score === 'number'
+              ? Number(d.trust40_total_score.toFixed(1))
+              : null);
+
+        // 14-from-40 equivalent if the trial emitted it
+        const x14 = (typeof d.trust14_equiv_total_percent === 'number')
+          ? Number(d.trust14_equiv_total_percent.toFixed(1))
+          : null;
+
+        // If both are present, emit the pair "(x40, x14)"; else fall back to just x40
+        return (x40 != null && x14 != null) ? `(${x40}, ${x14})` : x40;
       }
       if (et === 'questionnaire14mid1' || et === 'questionnaire14mid2') {
         return d.trust14_total_percent ?? d.trust14_total_score ?? null;
