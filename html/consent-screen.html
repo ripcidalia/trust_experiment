@@ -1,0 +1,82 @@
+<!-- ==========================================================================
+     consent-screen.html
+     Purpose: Displays the participant information and consent form
+              before the experiment begins.
+     Behavior:
+     - Shown first upon page load.
+     - Clicking “I consent — Start experiment” hides this screen
+       and initializes the experiment sequence (via JS).
+     Layout:
+     - Centered vertically and horizontally using the `.center-outer` container.
+     - Uses a `.card` for visual framing and readability.
+     Accessibility:
+     - Standard HTML semantics ensure screen reader compatibility.
+     ========================================================================== -->
+
+<div id="consent-screen" class="center-outer">
+  <div class="card">
+    <h1>Participant Information & Consent</h1>
+
+    <p>
+      You are being invited to participate in a research study titled
+      <strong>Trust in Human–Robot Interaction in Search-and-Rescue Scenarios</strong>.
+      This study is being conducted by Pedro Rodrigues Correia da Silva from the
+      Faculty of Aerospace Engineering at Delft University of Technology (TU Delft).
+    </p>
+
+    <p>
+      The purpose of this research study is to collect data regarding how people make decisions
+      and form trust in emergency situations where a robotic agent provides suggestions.
+      The study will take approximately <strong>25–30 minutes</strong> to complete.
+      The data will be used for research in a Master Thesis at the Faculty of Aerospace Engineering of TU Delft.
+    </p>
+
+    <p>
+      During the study, you will be asked to complete a short questionnaire and then perform
+      a computer-based task in which you decide between different options (e.g., choosing a door),
+      with guidance from a simulated drone.
+    </p>
+
+    <p>
+      As with any online activity, there is a minimal risk of a data breach.
+      To the best of our ability, your responses in this study will remain
+      <strong>completely anonymous</strong>. No names, email addresses, or IP addresses are collected.
+      The only data recorded are your responses and timing information within the experiment.
+      Data will be stored securely and used exclusively for academic research purposes.
+    </p>
+
+    <p>
+      Your participation in this study is entirely voluntary, and you can withdraw at any time.
+      You are free to omit any questions.
+      If you wish to stop the experiment early, you may click the <strong>Exit</strong> button
+      (shown at the top-right corner of the screen during the task) or press
+      <strong><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>X</kbd></strong> on your keyboard.
+      At that point, you will be given the choice to either keep the data collected so far
+      or to discard it entirely. Once the experiment is completed, the data is anonymous
+      and cannot be linked back to you or removed.
+    </p>
+
+    <p>
+      If you have any questions about this research, please contact
+      Pedro Silva (<a href="mailto:P.RodriguesCorreiaDaSilva@student.tudelft.nl">P.RodriguesCorreiaDaSilva@student.tudelft.nl</a>).
+      The responsible supervisor for this project is
+      Anahita Jamshidnejad (<a href="mailto:A.Jamshidnejad@tudelft.nl">A.Jamshidnejad@tudelft.nl</a>).
+    </p>
+
+    <p>
+      Please note that this experiment works best on a <strong>desktop or laptop computer</strong>.
+      While it can run on mobile devices, the interface may be harder to use, and results may be compromised.
+      On desktop, the experiment will automatically switch to <strong>full screen mode</strong>, the recommended mode
+      for completing the study. You can exit full screen at any time by pressing the <strong><kbd>Esc</kbd></strong> key.
+    </p>
+
+    <p>
+      <strong>By clicking on the button below, you are agreeing to this Opening Statement
+      and giving your consent to participate in this study.</strong>
+    </p>
+
+    <div style="text-align:center;">
+      <button id="consent-button">I consent — Start experiment</button>
+    </div>
+  </div>
+</div>

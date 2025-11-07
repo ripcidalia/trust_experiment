@@ -1,0 +1,89 @@
+/* ==========================================================================
+   warmth.css
+   Purpose: Adds a dynamic “warmth” color overlay to the scene background,
+            simulating environmental heat intensity (cool → warm → hot).
+   Behavior:
+   - The tint appears as a soft radial gradient near the lower part of the
+     viewport (mimicking a heat glow or ambient firelight).
+   - JS toggles between "cool", "warm", and "hot" via class names.
+   - Optional flicker animation modulates opacity for realism.
+   ========================================================================== */
+
+/* ===== 1) Base overlay layer ================================================
+   Positioned over the scene with a radial tint and controlled opacity.
+   -------------------------------------------------------------------------- */
+.scene-root::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+
+  /* Soft radial gradient concentrated near the lower area of the scene */
+  background:
+    radial-gradient(
+      140% 120% at 50% 82%,
+      var(--warmth-color, rgba(255, 140, 60, 0.20)) 0%,
+      rgba(0, 0, 0, 0) 62%
+    );
+
+  /* Blend mode preserves natural highlights without oversaturating */
+  mix-blend-mode: screen;
+
+  opacity: var(--warmth-base, 0);     /* default (no visible tint) */
+  transition: opacity 240ms ease;     /* smooth fade when theme changes */
+}
+
+/* ===== 2) Default state (no warmth) ======================================== */
+.scene-root {
+  --warmth-base: 0; /* baseline opacity */
+  --warmth-peak: 0; /* used when flickering */
+}
+
+/* ===== 3) Flicker animation =================================================
+   Creates a subtle pulsing brightness to simulate fire flicker.
+   Controlled via `--hb-period` for tempo.
+   -------------------------------------------------------------------------- */
+@keyframes warmthFlicker {
+  0%, 100% { opacity: var(--warmth-base); }
+  50%      { opacity: var(--warmth-peak); }
+}
+
+/* When active, animates the overlay’s opacity */
+.scene-root.warmth-flicker::after {
+  animation: warmthFlicker var(--hb-period, 900ms) ease-in-out infinite;
+}
+
+/* ===== 4) Warmth variants ===================================================
+   Each defines its tint color and strength (base vs. peak flicker).
+   -------------------------------------------------------------------------- */
+
+/* Cool (bluish, subtle tint) */
+.scene-root.warmth-cool {
+  --warmth-color: rgba(70, 140, 255, 0.22);
+  --warmth-base:  0.25;
+  --warmth-peak:  0.38;
+}
+
+/* Warm (soft orange glow) */
+.scene-root.warmth-warm {
+  --warmth-color: rgba(255, 150, 80, 0.28);
+  --warmth-base:  0.25;
+  --warmth-peak:  0.38;
+}
+
+/* Hot (stronger orange/red glow) */
+.scene-root.warmth-hot {
+  --warmth-color: rgba(255, 100, 40, 0.35);
+  --warmth-base:  0.45;
+  --warmth-peak:  0.55;
+}
+
+/* ===== 5) Accessibility =====================================================
+   Disable flicker animations when user prefers reduced motion.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .scene-root.warmth-flicker::after {
+    animation: none;
+  }
+}

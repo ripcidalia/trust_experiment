@@ -1,0 +1,73 @@
+/* ==========================================================================
+   fx.css
+   Purpose: Defines the foreground visual effects (fire and smoke layers)
+            shown during each scene. Motion and displacement are parameterized
+            via CSS custom properties controlled by JavaScript.
+   Behavior:
+   - Each .fx-layer moves along a vector defined by --tx0/--ty0 and --dtx/--dty.
+   - The property --fx-p (0 → 1) is animated to interpolate the transform.
+   - Fire and smoke layers have different z-index and opacity.
+   ========================================================================== */
+
+/* ===== 1) Base layer container ===== */
+.fx-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  user-select: none;
+  visibility: visible;
+  opacity: 1;
+
+  /* Parameterized transform origin and displacement — JS defines these per element */
+  --tx0: 0px;  /* initial X position */
+  --ty0: 0px;  /* initial Y position */
+  --dtx: 0px;  /* total X displacement across animation */
+  --dty: 0px;  /* total Y displacement across animation */
+  --fx-p: 0;   /* normalized progress 0–1, animated by keyframes */
+
+  /* Compute position as linear blend based on --fx-p */
+  transform: translate(
+    calc(var(--tx0) + var(--dtx) * var(--fx-p)),
+    calc(var(--ty0) + var(--dty) * var(--fx-p))
+  );
+
+  /* Animation: progress driver */
+  animation-name: fxProgress;
+  animation-duration: var(--fx-period, 1800ms);
+  animation-timing-function: linear;
+  animation-iteration-count: var(--fx-iter, 1);
+  animation-fill-mode: var(--fx-fill, both);
+  animation-delay: 0ms; /* starts immediately each trial */
+
+  will-change: transform;
+}
+
+/* ===== 2) Keyframes: animate the parameter (not transform directly) ===== */
+@keyframes fxProgress {
+  from { --fx-p: 0; }
+  to   { --fx-p: 1; }
+}
+
+/* ===== 3) Layer-specific attributes ===== */
+
+/* Smoke layers — slightly transparent and behind fire */
+.smoke-left,
+.smoke-right {
+  z-index: 46;
+  opacity: var(--smoke-opacity, 0.95);
+}
+
+/* Fire layers — fully visible and above smoke */
+.fire-left,
+.fire-right {
+  z-index: 47;
+  opacity: 1;
+}
+
+/* ===== 4) Accessibility: reduced motion ===== */
+@media (prefers-reduced-motion: reduce) {
+  .fx-layer {
+    animation: none;
+  }
+}
