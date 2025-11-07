@@ -78,10 +78,6 @@ export function createDoorTrial(t, idx, total, opts = {}) {
       event_type: opts.demo ? 'training_demo' : 'door_trial'
     },
 
-    on_finish: d => {
-      try { logTrialRow(d); } catch (_) {}
-    },
-
     on_load: function () {
       lockPageScroll();
       setJsPsychDisplayBackground('#000');
@@ -986,15 +982,12 @@ export function createDoorTrial(t, idx, total, opts = {}) {
         }
 
         // Augment on_finish with restoration + cleanup.
-        const prevFinish = trial.on_finish;
         trial.on_finish = function (data) {
           try {
             window.CONFIG.fire_inward_px  = _savedFx.fire_inward_px;
             window.CONFIG.smoke_inward_px = _savedFx.smoke_inward_px;
             window.CONFIG.smoke_rise_px   = _savedFx.smoke_rise_px;
           } catch (_) {}
-
-          if (prevFinish) prevFinish.call(trial, data);
 
           try { stopIntegrity(); } catch (_) {}
           try { pendingTO.forEach(clearTimeout); } catch (_) {}

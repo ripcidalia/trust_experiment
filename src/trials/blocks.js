@@ -15,7 +15,7 @@ import { makeTrustProbeTrial } from './trustProbe.js';
 import { loadTrialsBlocks, augmentTrialsWithRiskAndAssets } from '../data/sets.js';
 import { randSeeded } from '../data/assets.js';
 import { createDoorTrial } from './doorTrial.js';
-import { trust14Trial } from './trust14.js';
+import { trust14Trial } from './trustQuestionnaires.js';
 
 /**
  * Initialize and populate the jsPsych timeline with:
