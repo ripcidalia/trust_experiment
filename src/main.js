@@ -14,7 +14,8 @@ import { showExitModal, hideExitModal, showEndScreenKeep, showEndScreenDiscard }
 import { initExperiment } from './trials/blocks.js';
 import { generateTrainingTrials } from './data/sets.js';
 import { VICTIMS, EMPTY, BACKGROUNDS, DOOR_SKINS, ALL_SMOKE, ALL_FIRE, randSeeded } from './data/assets.js';
-import { ensureReviewConditionAssigned, loadReviewsJSON, pickReviewSet, assignAvatarsToReviewSet, listAllAvatarImages } from './trials/reputation.js';
+import { //ensureReviewConditionAssigned,
+        pickReviewConditionFallback7, loadReviewsJSON, pickReviewSet, assignAvatarsToReviewSet, listAllAvatarImages } from './trials/reputation.js';
 
 import { logEnqueue, scheduleFlush, flushSyncBeacon, clearLocalQueue, requestDeleteByParticipant } from './logging/index.js';
 import { buildRowsForLogging } from './logging/build.js';
@@ -225,32 +226,82 @@ export async function bootstrap() {
             selfConfidenceTrial,
         );
 
-        // Background loading UI while we lock-in review assignment / assets.
         showLoadingOverlay('Loading experiment… Please wait');
 
-        // Ensure the participant receives a canonical (server-assigned) review condition.
-        await ensureReviewConditionAssigned();
+        // Assign review condition client-side in a balanced, deterministic way.
+        // Primary: use pickReviewConditionFallback7 from reputation.js.
+        // Fallback: local deterministic hash into the 7-label space if anything is off.
+        const VALID_REVIEW_CONDITIONS = [
+            'very_positive',
+            'moderately_positive',
+            'slightly_positive',
+            'mixed',
+            'slightly_negative',
+            'moderately_negative',
+            'very_negative'
+        ];
 
-        // Globally stamp assigned review condition so every row carries it.
+        function hashPidToIndex(str, m) {
+            // FNV-1a style hash; matches our general pattern elsewhere.
+            let h = 2166136261 >>> 0;
+            for (let i = 0; i < str.length; i++) {
+                h ^= str.charCodeAt(i);
+                h = Math.imul(h, 16777619) >>> 0;
+            }
+            return h % m;
+        }
+
+        let reviewCondition = null;
+
+        // Try library helper first.
+        try {
+            reviewCondition = pickReviewConditionFallback7({ pid });
+        } catch (err) {
+            console.warn('[reviews] pickReviewConditionFallback7 threw:', err);
+        }
+
+        // If helper returned something invalid/falsy, fall back to local deterministic pick.
+        if (!VALID_REVIEW_CONDITIONS.includes(reviewCondition)) {
+            const idx = hashPidToIndex(String(pid) + '::reviews7_local', VALID_REVIEW_CONDITIONS.length);
+            reviewCondition = VALID_REVIEW_CONDITIONS[idx];
+            console.warn(
+                '[reviews] Fallback in main.js used for PID',
+                pid,
+                '→',
+                reviewCondition
+            );
+        }
+
+        // Expose on CONFIG + window for consistency with the rest of the code.
+        CONFIG.review_condition = reviewCondition;
+        window.ASSIGNED_REVIEW_CONDITION = reviewCondition;
+
+        // Stamp onto all jsPsych rows so it’s logged everywhere.
         jsPsych.data.addProperties({
-            review_condition: window.ASSIGNED_REVIEW_CONDITION
+            review_condition: reviewCondition
         });
+
+        console.log('[reviews] PID', pid, '→ review_condition:', reviewCondition);
+
 
         // Build the reviews trial (cards + avatar assignment) + reputation probe.
         const REVIEWS = await loadReviewsJSON();
         let reviewsTrial = null;
-        if (REVIEWS) {
-            // Normally already set; we defensively ensure it nonetheless.
-            const cond = window.ASSIGNED_REVIEW_CONDITION || await ensureReviewConditionAssigned();
 
-            const label = window.ASSIGNED_REVIEW_CONDITION; // canonical
+        if (REVIEWS) {
+            // Use the condition assigned on the client (e.g. via pickReviewConditionFallback7)
+            const label =
+                window.ASSIGNED_REVIEW_CONDITION ||
+                CONFIG.review_condition;
+
             const expected = Number(
-                (CONFIG.review_expected_map && Object.prototype.hasOwnProperty.call(CONFIG.review_expected_map, label))
+                CONFIG.review_expected_map &&
+                Object.prototype.hasOwnProperty.call(CONFIG.review_expected_map, label)
                     ? CONFIG.review_expected_map[label]
                     : 0
             );
 
-            const set  = pickReviewSet(REVIEWS, label, randSeeded);
+            const set = pickReviewSet(REVIEWS, label, randSeeded);
             const reviewSetWithAvatars = assignAvatarsToReviewSet(set, randSeeded);
 
             reviewsTrial = makeReviewsTrial({
@@ -261,6 +312,7 @@ export async function bootstrap() {
 
             timeline.push(reviewsTrial, reputationProbeTrial);
         }
+
 
         // Short “what you’ll see next” screen before the one-trial demo + main task start.
         timeline.push(readyTrial);
