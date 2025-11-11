@@ -18,7 +18,6 @@
 
 import { CONFIG, pid } from '../config.js';
 import { pickBackground, pickDoorSkin, nextSmokePair, nextFirePair, pickVictimSkin, randSeeded } from './assets.js';
-import { ensureReviewConditionAssigned, pickReviewConditionFallback7 } from '../trials/reputation.js';
 
 /**
  * Load and normalize trial blocks for the chosen set.
@@ -35,41 +34,6 @@ export async function loadTrialsBlocks() {
     if (urlSet) CONFIG.set_id = urlSet;
   }
 
-  // Reputation condition (read-only here; reputation module is authoritative).
-  const cohort = sp.get('cohort') || 'main';
-  const ASSIGN_KEY = `rev_assign:${cohort}:${CONFIG.participant_id}`;
-
-  // Ensure there is an assigned label, without freezing CONFIG from this module.
-  let assignedLabel = window.ASSIGNED_REVIEW_CONDITION || CONFIG.review_condition || null;
-  if (!assignedLabel) {
-    try {
-      await ensureReviewConditionAssigned();
-      assignedLabel = window.ASSIGNED_REVIEW_CONDITION || CONFIG.review_condition || null;
-    } catch (err) {
-      console.warn('[assign] ensureReviewConditionAssigned failed in sets.js:', err);
-      // Fallback: local cache then deterministic fallback. Do not freeze/write CONFIG here.
-      try {
-        const cached = JSON.parse(localStorage.getItem(ASSIGN_KEY) || 'null');
-        if (cached && cached.label) {
-          assignedLabel = cached.label;
-        } else {
-          assignedLabel = pickReviewConditionFallback7({ pid: CONFIG.participant_id });
-          try {
-            localStorage.setItem(
-              ASSIGN_KEY,
-              JSON.stringify({
-                pid: CONFIG.participant_id,
-                cohort,
-                label: assignedLabel,
-                ts: Date.now(),
-                source: 'fallback'
-              })
-            );
-          } catch {}
-        }
-      } catch {}
-    }
-  }
 
   const storageKey = `${CONFIG.local_key}::${CONFIG.participant_id}`;
 
